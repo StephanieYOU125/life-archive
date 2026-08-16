@@ -1,20 +1,13 @@
 {
-  "name": "Life Archive｜我的人生故事庫",
+  "name": "Life Archive｜私人書稿工作室",
   "short_name": "Life Archive",
-  "description": "從照片找回回憶，整理成人生故事與書稿素材。",
-  "start_url": "./app.html",
+  "description": "整理人生照片、回憶、故事、章節與書稿的個人寫作工作室。",
+  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#f3eee7",
+  "background_color": "#f4f0e9",
   "theme_color": "#211f1d",
   "lang": "zh-Hant",
   "orientation": "any",
-  "icons": [
-    {
-      "src": "./app-icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    }
-  ]
+  "icons": [{"src":"./app-icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
 }
