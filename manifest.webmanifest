@@ -1,0 +1,20 @@
+{
+  "name": "Life Archive｜我的人生故事庫",
+  "short_name": "Life Archive",
+  "description": "從照片找回回憶，整理成人生故事與書稿素材。",
+  "start_url": "./app.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f3eee7",
+  "theme_color": "#211f1d",
+  "lang": "zh-Hant",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "./app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
