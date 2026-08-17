@@ -46,6 +46,15 @@ function getLastChapter(metrics){
     || null;
 }
 
+function lastParagraphExcerpt(chapter,max=130){
+  const text=String(chapter?.draft||'').trim();
+  if(!text)return '';
+  const parts=text.split(/\n+/).map(x=>x.trim()).filter(Boolean);
+  const last=parts[parts.length-1]||text;
+  const clean=last.replace(/\s+/g,' ');
+  return clean.length>max?`…${clean.slice(-(max-1))}`:clean;
+}
+
 function rememberCurrentChapter(){
   const select=document.getElementById('chapterSelect');
   if(select?.value)localStorage.setItem(DASHBOARD_LAST_CHAPTER_KEY,select.value);
@@ -80,12 +89,16 @@ function addStyles(){
     .dw-hero{background:linear-gradient(145deg,#2b2623,#493638);color:#fff;border-radius:24px;padding:30px;margin-bottom:16px;box-shadow:0 14px 38px rgba(50,40,30,.08)}
     .dw-hero h1{font-family:Georgia,"Noto Serif TC",serif;font-size:38px;margin:7px 0 8px}.dw-hero p{margin:0;color:#ded4cf;line-height:1.8;max-width:760px}
     .dw-kicker{font-size:10px;letter-spacing:.14em;font-weight:900;color:#e8cbc6}.dw-section{margin-top:18px}.dw-section-head{display:flex;justify-content:space-between;align-items:end;gap:14px;margin-bottom:9px}.dw-section-head h2{margin:0;font-family:Georgia,"Noto Serif TC",serif;font-size:22px}.dw-section-head p{margin:0;color:var(--muted);font-size:11px;line-height:1.6}
-    .dw-continue{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center}.dw-continue small{display:block;color:var(--accent);font-weight:800;margin-bottom:4px}.dw-continue strong{font-size:19px}.dw-continue p{color:var(--muted);font-size:12px;line-height:1.6;margin:6px 0 0}
+    .dw-continue{background:linear-gradient(135deg,#fffdf9,#fbf7f1);border:1px solid #ddd1c6;border-radius:20px;padding:20px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:center;box-shadow:0 9px 24px rgba(56,43,34,.045)}
+    .dw-current-eyebrow{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:7px}.dw-current-eyebrow span{font-size:9px;letter-spacing:.11em;font-weight:900;color:var(--accent)}.dw-current-eyebrow em{font-style:normal;font-size:9px;color:var(--muted);background:#f1ebe4;border-radius:999px;padding:4px 7px}
+    .dw-current-title{font-family:Georgia,"Noto Serif TC",serif;font-size:24px;line-height:1.35;margin:0;color:#342d29}.dw-current-meta{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}.dw-current-meta span{font-size:10px;color:#6f655e;border:1px solid #e3d8cd;background:#fff;border-radius:999px;padding:5px 8px}
+    .dw-current-question{margin-top:12px;border-left:3px solid #c9a0a7;background:#f7eff0;border-radius:0 11px 11px 0;padding:10px 12px}.dw-current-question small{display:block;font-size:9px;color:var(--accent);font-weight:900;letter-spacing:.06em;margin-bottom:3px}.dw-current-question p{margin:0;color:#4f4641;font-family:Georgia,"Noto Serif TC",serif;font-size:13px;line-height:1.65}
+    .dw-current-excerpt{margin-top:11px;color:#7a7069;font-size:11px;line-height:1.7}.dw-current-excerpt b{font-size:9px;color:#9b8f86;letter-spacing:.04em;margin-right:5px}.dw-current-actions{display:grid;gap:7px;min-width:130px}.dw-current-actions .btn{white-space:nowrap}
     .dw-intents{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.dw-intent{background:var(--panel);border:1px solid var(--line);border-radius:17px;padding:17px;display:grid;grid-template-columns:38px 1fr;gap:12px}.dw-intent-icon{width:38px;height:38px;border-radius:12px;background:#f3e7e7;color:var(--accent);display:grid;place-items:center;font-size:18px}.dw-intent h3{margin:1px 0 5px;font-size:15px}.dw-intent p{margin:0;color:var(--muted);font-size:11px;line-height:1.6}.dw-links{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px}.dw-link{border:0;background:transparent;padding:0;color:var(--accent);font-size:11px;font-weight:800;cursor:pointer}.dw-link:hover{text-decoration:underline}
     .dw-next{background:#f8f2eb;border:1px solid #ddcfc2;border-radius:18px;padding:18px;display:grid;grid-template-columns:40px 1fr auto;gap:12px;align-items:center}.dw-next-icon{width:40px;height:40px;border-radius:50%;background:#fff;color:var(--accent);display:grid;place-items:center;font-weight:900}.dw-next small{display:block;color:var(--accent);font-weight:900;margin-bottom:3px}.dw-next strong{display:block;font-size:15px}.dw-next p{margin:5px 0 0;color:#6b6058;font-size:11px;line-height:1.6}
     .dw-progress{display:grid;gap:7px}.dw-progress-row{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:12px 14px;display:grid;grid-template-columns:120px 1fr auto;gap:12px;align-items:center}.dw-progress-row b{font-size:12px}.dw-progress-row span{font-size:11px;color:var(--muted)}.dw-progress-row em{font-style:normal;font-size:10px;font-weight:900;padding:5px 8px;border-radius:999px;background:#eee7df;color:#6e665f}.dw-progress-row em.started{background:#e3efe5;color:#356044}.dw-progress-row em.current{background:#f3e7e7;color:var(--accent)}
     .dw-mini-stats{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.dw-mini-stat{font-size:10px;color:#d8ceca;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:6px 9px}
-    @media(max-width:850px){.dw-hero{padding:23px 20px}.dw-hero h1{font-size:30px}.dw-intents{grid-template-columns:1fr}.dw-continue,.dw-next{grid-template-columns:1fr}.dw-progress-row{grid-template-columns:1fr auto}.dw-progress-row span{grid-column:1/-1}.dw-section-head{display:block}.dw-section-head p{margin-top:4px}}
+    @media(max-width:850px){.dw-hero{padding:23px 20px}.dw-hero h1{font-size:30px}.dw-intents{grid-template-columns:1fr}.dw-continue,.dw-next{grid-template-columns:1fr}.dw-current-actions{grid-template-columns:1fr;min-width:0}.dw-current-title{font-size:21px}.dw-progress-row{grid-template-columns:1fr auto}.dw-progress-row span{grid-column:1/-1}.dw-section-head{display:block}.dw-section-head p{margin-top:4px}}
   `;
   document.head.appendChild(style);
 }
@@ -105,7 +118,14 @@ function nextSuggestion(m){
   }
   if(m.drafted.length>0){
     const c=getLastChapter(m);
-    return {icon:'→',title:'繼續正在形成的章節',detail:`目前已有 ${m.drafted.length} 個章節出現正文。比起重新開一個新坑，先把一章往前推。`,chapterId:c?.id,button:'繼續寫作'};
+    const chars=String(c?.draft||'').length;
+    if(c&&!dashNonEmpty(c.question)){
+      return {icon:'?',title:'替這一章留下一個真正的問題',detail:'正文已經開始長出來，但核心問題還是空的。先寫下一句「這一章到底想回答什麼？」會比繼續加字更有方向。',chapterId:c.id,button:'整理核心問題'};
+    }
+    if(chars>=400){
+      return {icon:'⚑',title:'先不要急著再加字，讀一次缺口',detail:`這一章目前已有 ${chars.toLocaleString()} 字。可以換到修稿工作室，看畫面、衝突、行動與理解哪一層最值得補。`,target:'diagnosis',button:'去修稿工作室'};
+    }
+    return {icon:'▣',title:'下一段先補一個看得見的畫面',detail:'這章已經開始了。與其重複整理觀點，可以先補一個具體時刻、動作或物件，讓讀者真正站進現場。',chapterId:c?.id,button:'回章節補畫面'};
   }
   if(m.timeline>0||m.materials.length>0||m.rawChars>0){
     return {icon:'◇',title:'把回憶變成可以使用的故事素材',detail:'你已經開始保存人生資料。下一步不必決定它是不是「好故事」，先把值得記住的事件收進素材庫。',target:'materials',button:'打開素材庫'};
@@ -135,48 +155,56 @@ function renderDashboard(){
   const last=getLastChapter(m);
   const suggestion=nextSuggestion(m);
   const lastDraftChars=last?String(last.draft||'').length:0;
+  const chapterIndex=last?m.chapters.findIndex(c=>String(c.id)===String(last.id))+1:0;
+  const excerpt=lastParagraphExcerpt(last);
   const continueHtml=last?`
     <div class="dw-continue">
-      <div><small>繼續上次的工作</small><strong>${dashEsc(last.title||'未命名章節')}</strong><p>${lastDraftChars?`${lastDraftChars.toLocaleString()} 字正文`:'這一章還沒有正文'}${dashNonEmpty(last.question)?` · ${dashEsc(last.question)}`:''}</p></div>
-      <button class="btn primary" type="button" data-dash-chapter="${dashEsc(last.id)}">${lastDraftChars?'繼續寫作':'開始這一章'} →</button>
+      <div>
+        <div class="dw-current-eyebrow"><span>上次停在這一章</span>${chapterIndex>0?`<em>第 ${chapterIndex} 章</em>`:''}</div>
+        <h3 class="dw-current-title">${dashEsc(last.title||'未命名章節')}</h3>
+        <div class="dw-current-meta"><span>${lastDraftChars?`${lastDraftChars.toLocaleString()} 字正文`:'還沒有正文'}</span>${dashNonEmpty(last.question)?'<span>核心問題已設定</span>':'<span>核心問題待整理</span>'}</div>
+        ${dashNonEmpty(last.question)?`<div class="dw-current-question"><small>這章正在回答</small><p>${dashEsc(last.question)}</p></div>`:''}
+        ${excerpt?`<div class="dw-current-excerpt"><b>上次停在這裡</b>${dashEsc(excerpt)}</div>`:''}
+      </div>
+      <div class="dw-current-actions"><button class="btn primary" type="button" data-dash-chapter="${dashEsc(last.id)}">${lastDraftChars?'回到這一章':'開始這一章'} →</button></div>
     </div>`:`
     <div class="dw-continue">
-      <div><small>還沒有正在寫的章節</small><strong>不用急著寫正文。</strong><p>可以先保存人生、累積素材，或建立第一個章節骨架。</p></div>
-      <button class="btn" type="button" data-dash-target="outline">前往章節地圖</button>
+      <div><div class="dw-current-eyebrow"><span>目前還沒有正在寫的章節</span></div><h3 class="dw-current-title">不用急著從正文開始。</h3><div class="dw-current-excerpt">可以先保存人生、累積素材，或建立第一個章節骨架。</div></div>
+      <div class="dw-current-actions"><button class="btn" type="button" data-dash-target="outline">前往章節地圖</button></div>
     </div>`;
 
   const rows=progressRows(m);
   section.innerHTML=`
     <div class="dw-hero">
       <div class="dw-kicker">LIFE ARCHIVE · TODAY</div>
-      <h1>今天想把哪一小部分往前推？</h1>
-      <p>先保存，再理解；想寫成書的時候，再把故事慢慢組起來。你不必每次都從「寫一本書」開始。</p>
+      <h1>今天，從哪裡繼續？</h1>
+      <p>不需要每天重新規劃人生。回到一段還沒寫完的故事，或換一種方式整理它，就已經是在往前走。</p>
       <div class="dw-mini-stats"><span class="dw-mini-stat">◷ ${m.timeline} 筆時間軸</span><span class="dw-mini-stat">◇ ${m.materials.length} 筆素材</span><span class="dw-mini-stat">☷ ${m.chapters.length} 個章節</span><span class="dw-mini-stat">✎ ${m.drafted.length} 章已有正文</span><span class="dw-mini-stat">❝ ${m.refs.length} 筆借鏡</span></div>
     </div>
 
     <section class="dw-section">
-      <div class="dw-section-head"><div><h2>繼續上次的工作</h2><p>大多數時候，你不是重新開始，而是繼續。</p></div></div>
+      <div class="dw-section-head"><div><h2>接著寫</h2><p>回到上次停下來的地方，不需要重新找方向。</p></div></div>
       ${continueHtml}
     </section>
 
     <section class="dw-section">
-      <div class="dw-section-head"><div><h2>今天你想做什麼？</h2><p>先選現在的狀態，不必先理解所有功能。</p></div></div>
+      <div class="dw-section-head"><div><h2>如果今天不想接著寫</h2><p>也可以換一種工作，不需要每次都推正文。</p></div></div>
       <div class="dw-intents">
         <article class="dw-intent"><div class="dw-intent-icon">◷</div><div><h3>我想記住一段人生</h3><p>有日期、有照片，或只是突然想到一件往事。先保存，不必判斷它是否值得寫進書。</p><div class="dw-links"><button class="dw-link" data-dash-target="timeline">人生時間軸 →</button><button class="dw-link" data-dash-target="memories">照片回憶 →</button></div></div></article>
         <article class="dw-intent"><div class="dw-intent-icon">◇</div><div><h3>我有一個故事，但不知道放哪裡</h3><p>先收進素材庫。它可以只是事件、畫面或一句還說不清楚的想法。</p><div class="dw-links"><button class="dw-link" data-dash-action="add-material">＋ 新增素材</button><button class="dw-link" data-dash-target="visual">故事工作台 →</button></div></div></article>
         <article class="dw-intent"><div class="dw-intent-icon">◎</div><div><h3>我想整理這本書到底要說什麼</h3><p>故事很多時，不要急著全寫。先找全書核心，再安排章節要回答的問題。</p><div class="dw-links"><button class="dw-link" data-dash-target="compass">全書定位 →</button><button class="dw-link" data-dash-target="outline">章節地圖 →</button></div></div></article>
-        <article class="dw-intent"><div class="dw-intent-icon">✎</div><div><h3>我已經知道要寫什麼</h3><p>直接進正文。先寫出一版，再用修稿檢查與引用借鏡補深度。</p><div class="dw-links"><button class="dw-link" data-dash-target="editor">章節編輯器 →</button><button class="dw-link" data-dash-target="diagnosis">修稿檢查 →</button></div></div></article>
+        <article class="dw-intent"><div class="dw-intent-icon">✎</div><div><h3>我想換成編輯模式</h3><p>不一定要增加新內容，也可以補畫面、查引用，或讀一次故事缺口。</p><div class="dw-links"><button class="dw-link" data-dash-target="references">引用與借鏡 →</button><button class="dw-link" data-dash-target="diagnosis">修稿工作室 →</button></div></div></article>
       </div>
     </section>
 
     <section class="dw-section">
-      <div class="dw-section-head"><div><h2>我建議你下一步</h2><p>依目前資料狀態提供方向，不是要求你照做。</p></div></div>
+      <div class="dw-section-head"><div><h2>另一個值得處理的地方</h2><p>和「接著寫」分開，這裡只提示一個旁支工作。</p></div></div>
       <div class="dw-next"><div class="dw-next-icon">${dashEsc(suggestion.icon)}</div><div><small>NEXT STEP</small><strong>${dashEsc(suggestion.title)}</strong><p>${dashEsc(suggestion.detail)}</p></div><button class="btn primary" type="button" ${suggestion.chapterId?`data-dash-chapter="${dashEsc(suggestion.chapterId)}"`:`data-dash-target="${dashEsc(suggestion.target)}"`}>${dashEsc(suggestion.button)} →</button></div>
     </section>
 
     <section class="dw-section">
       <div class="dw-section-head"><div><h2>你現在的位置</h2><p>不是完成度評分，只是讓你看見資料正在從「人生」慢慢走向「一本書」。</p></div></div>
-      <div class="dw-progress">${rows.map((r,i)=>`<div class="dw-progress-row"><b>${dashEsc(r[0])}</b><span>${dashEsc(r[1])}</span><em class="${r[2]==='已開始'?'started':r[2]==='進行中'?'current':''}">${dashEsc(r[2])}</em></div>`).join('')}</div>
+      <div class="dw-progress">${rows.map(r=>`<div class="dw-progress-row"><b>${dashEsc(r[0])}</b><span>${dashEsc(r[1])}</span><em class="${r[2]==='已開始'?'started':r[2]==='進行中'?'current':''}">${dashEsc(r[2])}</em></div>`).join('')}</div>
     </section>`;
 
   section.querySelectorAll('[data-dash-target]').forEach(btn=>btn.addEventListener('click',()=>navigateTo(btn.dataset.dashTarget)));
