@@ -7,33 +7,69 @@
 <link rel="manifest" href="manifest.webmanifest">
 <title>Life Archive｜照片回憶</title>
 <style>
-body{margin:0;background:#f3eee7;color:#292521;font-family:-apple-system,BlinkMacSystemFont,"Noto Sans TC",sans-serif}*{box-sizing:border-box}.wrap{max-width:980px;margin:auto;padding:28px 16px}.top{display:flex;justify-content:space-between;gap:15px;align-items:end}.top h1{font-family:Georgia,"Noto Serif TC",serif;font-size:34px;margin:7px 0}.muted{color:#817970;line-height:1.7}.btn{display:inline-block;border:1px solid #ded5c9;background:#fffdf9;padding:10px 14px;border-radius:11px;text-decoration:none;color:inherit;cursor:pointer}.primary{background:#7b3945;color:#fff;border-color:#7b3945}.drop{margin:22px 0;background:#fffdf9;border:2px dashed #cbbdaf;border-radius:18px;padding:24px;text-align:center}.hidden{display:none}.add-actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:14px}.grid{display:grid;gap:18px}.card{background:#fffdf9;border:1px solid #ded5c9;border-radius:18px;overflow:hidden;display:grid;grid-template-columns:minmax(220px,36%) 1fr}.photo{background:#e7dfd6;min-height:260px;display:grid;place-items:center}.photo img{width:100%;height:100%;max-height:440px;object-fit:contain}.photo-empty{padding:35px;text-align:center;color:#817970}.photo-empty strong{display:block;font-size:28px;margin-bottom:8px}.body{padding:18px}.body input,.body textarea,.body select{width:100%;border:1px solid #ded5c9;background:white;border-radius:9px;padding:10px;margin:5px 0 11px}.body textarea{min-height:130px;resize:vertical}.body label{font-size:11px;color:#817970;font-weight:700}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.title{font-size:19px;font-weight:750}.empty{text-align:center;color:#817970;padding:45px;background:#fffdf9;border-radius:16px}.actions{display:flex;gap:8px;flex-wrap:wrap}.danger{color:#a34b45}.eyebrow{font-size:11px;color:#7b3945;font-weight:800;letter-spacing:.12em}.cloud{margin:18px 0;background:#fffdf9;border:1px solid #ded5c9;border-radius:16px;padding:14px;display:flex;justify-content:space-between;gap:12px;align-items:center}.cloud strong{display:block}.cloud small{color:#817970;line-height:1.5}.cloud-actions{display:flex;gap:8px;flex-wrap:wrap}.sync-ok{color:#256d3e}.save-state{font-size:12px;color:#817970;margin-right:auto;align-self:center}.card-actions{display:flex;gap:8px;align-items:center;margin-top:4px}@media(max-width:700px){.top{display:block}.actions{margin-top:12px}.card{grid-template-columns:1fr}.row{grid-template-columns:1fr}.wrap{padding:20px 12px}.cloud{display:block}.cloud-actions{margin-top:10px}.drop{padding:20px 14px}.add-actions{display:grid;grid-template-columns:1fr}.add-actions .btn{width:100%;text-align:center;padding:13px}.photo{min-height:180px}}
+:root{--ink:#292521;--muted:#817970;--paper:#f3eee7;--panel:#fffdf9;--line:#ded5c9;--accent:#7b3945;--side:#211f1d}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Noto Sans TC",sans-serif}button,input,textarea,select{font:inherit}
+.shell{min-height:100vh;display:grid;grid-template-columns:245px 1fr}.side{position:fixed;inset:0 auto 0 0;width:245px;background:var(--side);color:#fff;padding:25px 17px;display:flex;flex-direction:column;z-index:40}.brand{display:flex;gap:12px;align-items:center;padding:5px 7px 22px}.mark{width:40px;height:45px;border-radius:8px;background:#ead8c9;color:#5f2933;display:grid;place-items:center;font-family:serif;font-size:23px}.brand strong{display:block}.brand small{color:#aaa199}.nav{display:grid;gap:3px;overflow:auto}.nav a{border:0;background:transparent;color:#c5beb6;text-decoration:none;text-align:left;padding:10px 12px;border-radius:10px;display:flex;gap:11px;align-items:center}.nav a:hover{background:#37322e;color:#fff}.nav a.active{background:#37322e;color:#fff;font-weight:700}.nav .backup{margin-top:8px;background:#ead8c9;color:#3a2927;font-weight:700}.side-note{margin-top:auto;color:#aaa199;font-size:11px;line-height:1.6;padding:12px}.main{grid-column:2;min-width:0}.mobile-top{display:none;position:sticky;top:0;z-index:30;background:rgba(243,238,231,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);padding:10px 12px;align-items:center;gap:10px}.menu-btn{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:9px 12px}.wrap{max-width:980px;margin:auto;padding:28px 16px}.top{display:flex;justify-content:space-between;gap:15px;align-items:end}.top h1{font-family:Georgia,"Noto Serif TC",serif;font-size:34px;margin:7px 0}.muted{color:var(--muted);line-height:1.7}.btn{display:inline-block;border:1px solid var(--line);background:var(--panel);padding:10px 14px;border-radius:11px;text-decoration:none;color:inherit;cursor:pointer}.primary{background:var(--accent);color:#fff;border-color:var(--accent)}.drop{margin:22px 0;background:var(--panel);border:2px dashed #cbbdaf;border-radius:18px;padding:24px;text-align:center}.hidden{display:none}.add-actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:14px}.grid{display:grid;gap:18px}.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;overflow:hidden;display:grid;grid-template-columns:minmax(220px,36%) 1fr}.photo{background:#e7dfd6;min-height:260px;display:grid;place-items:center}.photo img{width:100%;height:100%;max-height:440px;object-fit:contain}.photo-empty{padding:35px;text-align:center;color:var(--muted)}.photo-empty strong{display:block;font-size:28px;margin-bottom:8px}.body{padding:18px}.body input,.body textarea,.body select{width:100%;border:1px solid var(--line);background:#fff;border-radius:9px;padding:10px;margin:5px 0 11px}.body textarea{min-height:130px;resize:vertical}.body label{font-size:11px;color:var(--muted);font-weight:700}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.title{font-size:19px;font-weight:750}.empty{text-align:center;color:var(--muted);padding:45px;background:var(--panel);border-radius:16px}.actions{display:flex;gap:8px;flex-wrap:wrap}.danger{color:#a34b45}.eyebrow{font-size:11px;color:var(--accent);font-weight:800;letter-spacing:.12em}.cloud{margin:18px 0;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;display:flex;justify-content:space-between;gap:12px;align-items:center}.cloud strong{display:block}.cloud small{color:var(--muted);line-height:1.5}.cloud-actions{display:flex;gap:8px;flex-wrap:wrap}.sync-ok{color:#256d3e}.save-state{font-size:12px;color:var(--muted);margin-right:auto;align-self:center}.card-actions{display:flex;gap:8px;align-items:center;margin-top:4px}.scrim{display:none}
+@media(max-width:850px){.shell{display:block}.main{display:block}.side{transform:translateX(-100%);transition:.25s}.side.open{transform:none}.mobile-top{display:flex}.mobile-top strong{font-size:15px}.scrim{position:fixed;inset:0;background:rgba(0,0,0,.28);z-index:35}.scrim.show{display:block}.top{display:block}.actions{margin-top:12px}.card{grid-template-columns:1fr}.row{grid-template-columns:1fr}.wrap{padding:20px 12px}.cloud{display:block}.cloud-actions{margin-top:10px}.drop{padding:20px 14px}.add-actions{display:grid;grid-template-columns:1fr}.add-actions .btn{width:100%;text-align:center;padding:13px}.photo{min-height:180px}}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="top">
-    <div><span class="eyebrow">PHOTO → MEMORY → STORY</span><h1>照片回憶</h1><p class="muted">照片本體目前保存在這台裝置；回憶文字可同步到 Firebase。</p></div>
-    <div class="actions"><a class="btn" href="index.html">← 書稿工作室</a><button class="btn" id="export">匯出照片 JSON</button></div>
-  </div>
-
-  <div class="cloud">
-    <div><strong>☁ 回憶雲端同步</strong><small id="cloudStatus">正在載入 Firebase…</small></div>
-    <div class="cloud-actions"><button class="btn primary" id="loginBtn">Google 登入</button><button class="btn" id="syncBtn" hidden>同步全部回憶</button><button class="btn" id="loadBtn" hidden>載入雲端文字</button><button class="btn" id="logoutBtn" hidden>登出</button></div>
-  </div>
-
-  <div class="drop">
-    <strong>＋ 新增回憶</strong>
-    <p class="muted">可以直接拍照、從相簿選照片，或先建立一筆純文字回憶。</p>
-    <div class="add-actions">
-      <label class="btn primary">📷 拍照<input id="camera" class="hidden" type="file" accept="image/*" capture="environment"></label>
-      <label class="btn">🖼 從相簿選擇<input id="files" class="hidden" type="file" accept="image/*" multiple></label>
-      <button class="btn" id="textMemory">✎ 純文字回憶</button>
+<div class="shell">
+<aside class="side" id="side">
+  <div class="brand"><div class="mark">書</div><div><strong>私人書稿工作室</strong><small>Life Archive</small></div></div>
+  <nav class="nav">
+    <a href="index.html#dashboard">⌂ 從哪裡開始</a>
+    <a href="index.html#triage">▦ 初稿整理台</a>
+    <a href="index.html#outline">☷ 章節地圖</a>
+    <a href="index.html#visual">✦ 圖像化寫作</a>
+    <a class="active" href="app.html">▧ 照片回憶</a>
+    <a href="index.html#editor">✎ 章節編輯器</a>
+    <a href="index.html#materials">◇ 素材庫</a>
+    <a href="index.html#references">❝ 引用與借鏡</a>
+    <a href="index.html#diagnosis">⚑ 修稿檢查</a>
+    <a href="index.html#compass">◎ 全書定位</a>
+    <a href="index.html#source">≡ 原始文字</a>
+    <a class="backup" href="index.html#export">⇩ 備份與匯出</a>
+  </nav>
+  <div class="side-note">書稿文字與回憶文字可同步 Firebase；照片本體目前仍保存在各裝置的 IndexedDB。</div>
+</aside>
+<div class="scrim" id="scrim"></div>
+<main class="main">
+  <div class="mobile-top"><button class="menu-btn" id="menuBtn">☰</button><strong>照片回憶｜Life Archive</strong></div>
+  <div class="wrap">
+    <div class="top">
+      <div><span class="eyebrow">PHOTO → MEMORY → STORY</span><h1>照片回憶</h1><p class="muted">照片本體目前保存在這台裝置；回憶文字可同步到 Firebase。</p></div>
+      <div class="actions"><a class="btn" href="index.html">← 書稿工作室</a><button class="btn" id="export">匯出照片 JSON</button></div>
     </div>
-  </div>
 
-  <div id="grid" class="grid"></div>
+    <div class="cloud">
+      <div><strong>☁ 回憶雲端同步</strong><small id="cloudStatus">正在載入 Firebase…</small></div>
+      <div class="cloud-actions"><button class="btn primary" id="loginBtn">Google 登入</button><button class="btn" id="syncBtn" hidden>同步全部回憶</button><button class="btn" id="loadBtn" hidden>載入雲端文字</button><button class="btn" id="logoutBtn" hidden>登出</button></div>
+    </div>
+
+    <div class="drop">
+      <strong>＋ 新增回憶</strong>
+      <p class="muted">可以直接拍照、從相簿選照片，或先建立一筆純文字回憶。</p>
+      <div class="add-actions">
+        <label class="btn primary">📷 拍照<input id="camera" class="hidden" type="file" accept="image/*" capture="environment"></label>
+        <label class="btn">🖼 從相簿選擇<input id="files" class="hidden" type="file" accept="image/*" multiple></label>
+        <button class="btn" id="textMemory">✎ 純文字回憶</button>
+      </div>
+    </div>
+
+    <div id="grid" class="grid"></div>
+  </div>
+</main>
 </div>
+
+<script>
+(()=>{
+const side=document.getElementById('side'),scrim=document.getElementById('scrim'),menuBtn=document.getElementById('menuBtn');
+function closeSide(){side.classList.remove('open');scrim.classList.remove('show')}
+menuBtn.onclick=()=>{side.classList.toggle('open');scrim.classList.toggle('show')};scrim.onclick=closeSide;
+side.querySelectorAll('a').forEach(a=>a.addEventListener('click',closeSide));
+})();
+</script>
 
 <script>
 (()=>{
@@ -44,7 +80,7 @@ function open(){return new Promise((res,rej)=>{let r=indexedDB.open(DB,1);r.onup
 function getAll(){return new Promise((res,rej)=>{let r=db.transaction(STORE).objectStore(STORE).getAll();r.onsuccess=()=>res(r.result||[]);r.onerror=()=>rej(r.error)})}
 function put(x){return new Promise((res,rej)=>{let t=db.transaction(STORE,'readwrite');t.objectStore(STORE).put(x);t.oncomplete=()=>{window.dispatchEvent(new CustomEvent('lifearchive:memory-saved',{detail:x}));res()};t.onerror=()=>rej(t.error)})}
 function del(id){return new Promise((res,rej)=>{let t=db.transaction(STORE,'readwrite');t.objectStore(STORE).delete(id);t.oncomplete=()=>{window.dispatchEvent(new CustomEvent('lifearchive:memory-deleted',{detail:{id}}));res()};t.onerror=()=>rej(t.error)})}
-function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]))}
 function stages(v){return['童年','國中','高中','警大','警察工作','研究所','旅行','海外生活','運動／挑戰','其他'].map(x=>`<option${x===v?' selected':''}>${x}</option>`).join('')}
 function photoHtml(x){return x.image?`<img src="${x.image}" alt="${esc(x.title||'回憶照片')}">`:`<div class="photo-empty"><strong>✎</strong>純文字回憶<br><small>之後也可以再補照片</small></div>`}
 function render(){
