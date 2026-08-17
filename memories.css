@@ -1,0 +1,29 @@
+#v-memories .mem-top-actions{display:flex;gap:8px;flex-wrap:wrap}
+#v-memories .mem-drop{margin:22px 0;background:var(--panel);border:2px dashed #cbbdaf;border-radius:18px;padding:24px;text-align:center}
+#v-memories .mem-hidden{display:none}
+#v-memories .mem-add-actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:14px}
+#v-memories .mem-grid{display:grid;gap:18px}
+#v-memories .mem-card{background:var(--panel);border:1px solid var(--line);border-radius:18px;overflow:hidden;display:grid;grid-template-columns:minmax(220px,36%) 1fr}
+#v-memories .mem-photo{background:#e7dfd6;min-height:260px;display:grid;place-items:center}
+#v-memories .mem-photo img{width:100%;height:100%;max-height:440px;object-fit:contain}
+#v-memories .mem-photo-empty{padding:35px;text-align:center;color:var(--muted)}
+#v-memories .mem-photo-empty strong{display:block;font-size:28px;margin-bottom:8px}
+#v-memories .mem-body{padding:18px}
+#v-memories .mem-body input,#v-memories .mem-body textarea,#v-memories .mem-body select{width:100%;border:1px solid var(--line);background:#fff;border-radius:9px;padding:10px;margin:5px 0 11px}
+#v-memories .mem-body textarea{min-height:130px;resize:vertical;line-height:1.7}
+#v-memories .mem-body label{font-size:11px;color:var(--muted);font-weight:700}
+#v-memories .mem-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+#v-memories .mem-title{font-size:19px;font-weight:750}
+#v-memories .mem-empty{text-align:center;color:var(--muted);padding:45px;background:var(--panel);border:1px dashed var(--line);border-radius:16px}
+#v-memories .mem-danger{color:#a34b45}
+#v-memories .mem-save-state{font-size:12px;color:var(--muted);margin-right:auto;align-self:center}
+#v-memories .mem-card-actions{display:flex;gap:8px;align-items:center;margin-top:4px}
+#v-memories .mem-local-note{margin:16px 0;background:#f8f4ee;border:1px solid var(--line);border-radius:14px;padding:13px 15px;color:var(--muted);font-size:12px;line-height:1.65}
+@media(max-width:850px){
+  #v-memories .mem-card{grid-template-columns:1fr}
+  #v-memories .mem-row{grid-template-columns:1fr}
+  #v-memories .mem-drop{padding:20px 14px}
+  #v-memories .mem-add-actions{display:grid;grid-template-columns:1fr}
+  #v-memories .mem-add-actions .btn{width:100%;text-align:center;padding:13px}
+  #v-memories .mem-photo{min-height:180px}
+}
