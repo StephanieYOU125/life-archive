@@ -103,7 +103,7 @@ q('#addChapter').onclick=()=>{let t=prompt('章名？');if(t){S.chapters.push({i
 q('#addMaterial').onclick=()=>{let t=prompt('素材標題？');if(!t)return;let c=prompt('事件摘要／想到什麼？')||'';S.materials.push({id:uid(),title:t,content:c,stage:'靈感箱'});save();render()};
 // #addRef is handled by references-editor.js
 ['bookTitle','core','reader'].forEach(id=>q('#'+id).oninput=()=>{S[id==='bookTitle'?'title':id]=q('#'+id).value;save()});
-q('#runDiag').onclick=()=>{let c=S.chapters.find(x=>x.id===q('#chapterSelect').value)||S.chapters[0],d=c?.draft||'',checks=[['場景',/那天|當時|走進|看見|聽見|站在|坐在/.test(d),'是否有讓讀者進入現場？'],['篇幅',d.length>500,'目前正文 '+d.length+' 字元'],['反思',/發現|理解|後來|原來|學會/.test(d),'是否有從事件走向理解？']];q('#diag').innerHTML=checks.map(x=>`<div class="card"><span class="pill">${x[1]?'已有線索':'可再補強'}</span><strong>${x[0]}</strong><small>${x[2]}</small></div>`).join('')};
+// 修稿檢查由 revision-editor.js 負責
 function backup(){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(S,null,2)],{type:'application/json'}));a.download='life-archive-writing-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)}
 q('#backupTop').onclick=backup;q('#exportJson').onclick=backup;
 q('#importJson').onchange=async e=>{try{let x=JSON.parse(await e.target.files[0].text());if(!x.chapters)throw 0;if(confirm('匯入會取代目前文字工作室資料，確定？')){S=x;save();render();toast('已匯入')}}catch{alert('備份格式不正確')}};
@@ -122,5 +122,6 @@ if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serv
 <script type="module" src="./firebase-cloud-sync.js"></script>
 <script type="module" src="./mobile-auth.js"></script>
 <script src="./references-editor.js"></script>
+<script src="./revision-editor.js"></script>
 </body>
 </html>
