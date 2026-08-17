@@ -29,18 +29,18 @@
       <a class="btn" href="index.html" style="text-decoration:none;color:inherit">回 Life Archive</a>
     </div>
 
-    <div id="status" class="status">尚未登入。</div>
+    <div id="status" class="status">正在載入 Firebase…</div>
   </main>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.1/firebase-app.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
     import {
       getAuth,
       GoogleAuthProvider,
       signInWithPopup,
       signOut,
       onAuthStateChanged
-    } from "https://www.gstatic.com/firebasejs/12.7.1/firebase-auth.js";
+    } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCaZnmoChuGKYUqRfYKgsV29liGqokiSjA",
@@ -54,16 +54,20 @@
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
+    auth.useDeviceLanguage();
     const provider = new GoogleAuthProvider();
 
     const loginBtn = document.getElementById("loginBtn");
     const logoutBtn = document.getElementById("logoutBtn");
     const status = document.getElementById("status");
 
+    status.textContent = "Firebase 已載入，可以登入。";
+
     loginBtn.addEventListener("click", async () => {
       status.textContent = "正在開啟 Google 登入……";
       try {
-        await signInWithPopup(auth, provider);
+        const result = await signInWithPopup(auth, provider);
+        status.textContent = `登入成功：${result.user.email || "Google 帳號"}`;
       } catch (err) {
         console.error(err);
         status.innerHTML = `<span class="error">登入失敗</span><br>${err.code || ""}<br>${err.message || err}`;
@@ -92,7 +96,7 @@
       } else {
         loginBtn.hidden = false;
         logoutBtn.hidden = true;
-        status.textContent = "尚未登入。";
+        status.textContent = "Firebase 已載入，可以登入。";
       }
     });
   </script>
