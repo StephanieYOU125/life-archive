@@ -12,6 +12,7 @@
     (async()=>{
       const res=await fetch('./index.html',{cache:'no-store'});
       let html=await res.text();
+      html=html.replaceAll('href="app.html"','href="/app.html"');
       html=html.replace('</head>','<link rel="stylesheet" href="./sidebar-active.css"></head>');
       html=html.replace('</body>',`<script type="module">
         const cloudRes = await fetch('./firebase-cloud-sync.js',{cache:'no-store'});
