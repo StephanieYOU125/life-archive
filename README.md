@@ -2,7 +2,7 @@
 
 A private life archive for organizing photos, memories, stories, and book drafts.
 
-## 私人書稿工作室 v8 + PWA
+## 私人書稿工作室 + PWA
 
 Life Archive 用照片作為記憶入口：上傳以前的照片，再記錄時間、人生階段、地點與「那時候，我在做什麼？」。目前已加入 PWA 支援，可在 HTTPS 部署後加入 iPhone / Android 主畫面，像 App 一樣獨立開啟。
 
