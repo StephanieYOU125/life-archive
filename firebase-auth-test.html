@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Life Archive｜Firebase 登入測試</title>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;display:grid;place-items:center;background:#f4f0e9;color:#292521;font-family:-apple-system,BlinkMacSystemFont,"Noto Sans TC",sans-serif;padding:24px}
+    .card{width:min(560px,100%);background:#fffdf9;border:1px solid #ded5c9;border-radius:24px;padding:32px;box-shadow:0 12px 35px rgba(50,40,30,.08)}
+    h1{margin:0 0 8px;font-family:Georgia,"Noto Serif TC",serif}
+    p{color:#817970;line-height:1.7}
+    .btn{border:1px solid #ded5c9;background:#fffdf9;padding:11px 16px;border-radius:11px;cursor:pointer;font:inherit}
+    .primary{background:#7b3945;color:#fff;border-color:#7b3945}
+    .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+    .status{margin-top:22px;padding:16px;background:#f7f3ed;border-radius:14px;line-height:1.7;word-break:break-word}
+    .ok{color:#256d3e;font-weight:700}.muted{color:#817970}.error{color:#a32222;font-weight:700}
+  </style>
+</head>
+<body>
+  <main class="card">
+    <small class="muted">LIFE ARCHIVE × FIREBASE</small>
+    <h1>Google 登入測試</h1>
+    <p>這一頁只測試 Firebase Authentication，不會搬動或刪除你現在存在瀏覽器裡的書稿與照片資料。</p>
+
+    <div class="row">
+      <button id="loginBtn" class="btn primary">使用 Google 登入</button>
+      <button id="logoutBtn" class="btn" hidden>登出</button>
+      <a class="btn" href="index.html" style="text-decoration:none;color:inherit">回 Life Archive</a>
+    </div>
+
+    <div id="status" class="status">正在載入 Firebase…</div>
+  </main>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
+    import {
+      getAuth,
+      GoogleAuthProvider,
+      signInWithPopup,
+      signOut,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCaZnmoChuGKYUqRfYKgsV29liGqokiSjA",
+      authDomain: "life-archive-2d4a6.firebaseapp.com",
+      projectId: "life-archive-2d4a6",
+      storageBucket: "life-archive-2d4a6.firebasestorage.app",
+      messagingSenderId: "499371823629",
+      appId: "1:499371823629:web:878bbd928bc86fc0197b44",
+      measurementId: "G-C4NSZW459D"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    auth.useDeviceLanguage();
+    const provider = new GoogleAuthProvider();
+
+    const loginBtn = document.getElementById("loginBtn");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const status = document.getElementById("status");
+
+    status.textContent = "Firebase 已載入，可以登入。";
+
+    loginBtn.addEventListener("click", async () => {
+      status.textContent = "正在開啟 Google 登入……";
+      try {
+        const result = await signInWithPopup(auth, provider);
+        status.textContent = `登入成功：${result.user.email || "Google 帳號"}`;
+      } catch (err) {
+        console.error(err);
+        status.innerHTML = `<span class="error">登入失敗</span><br>${err.code || ""}<br>${err.message || err}`;
+      }
+    });
+
+    logoutBtn.addEventListener("click", async () => {
+      try {
+        await signOut(auth);
+      } catch (err) {
+        console.error(err);
+        status.innerHTML = `<span class="error">登出失敗</span><br>${err.message || err}`;
+      }
+    });
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        loginBtn.hidden = true;
+        logoutBtn.hidden = false;
+        status.innerHTML = `
+          <span class="ok">✓ Firebase 登入成功</span><br>
+          姓名：${user.displayName || "未提供"}<br>
+          Email：${user.email || "未提供"}<br>
+          UID：${user.uid}
+        `;
+      } else {
+        loginBtn.hidden = false;
+        logoutBtn.hidden = true;
+        status.textContent = "Firebase 已載入，可以登入。";
+      }
+    });
+  </script>
+</body>
+</html>

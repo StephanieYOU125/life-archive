@@ -1,0 +1,10 @@
+# Private writing content / exports
+draft-data.js
+*.backup.json
+life-archive-*.json
+照片回憶備份-*.json
+書稿完整備份-*.json
+
+# OS files
+.DS_Store
+Thumbs.db

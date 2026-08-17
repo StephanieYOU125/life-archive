@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Life Archive｜Firestore 資料庫化</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f4f0e9;color:#292521;font-family:-apple-system,BlinkMacSystemFont,"Noto Sans TC",sans-serif;padding:24px}.wrap{max-width:760px;margin:40px auto}.card{background:#fffdf9;border:1px solid #ded5c9;border-radius:24px;padding:28px;box-shadow:0 12px 35px rgba(50,40,30,.08)}h1{margin:0 0 8px;font-family:Georgia,"Noto Serif TC",serif}.muted{color:#817970;line-height:1.7}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:18px 0}.stat{background:#f7f3ed;border-radius:14px;padding:16px}.stat strong{display:block;font-size:26px}.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}.btn{border:1px solid #ded5c9;background:#fffdf9;padding:11px 16px;border-radius:11px;cursor:pointer;font:inherit}.primary{background:#7b3945;color:#fff;border-color:#7b3945}.status{margin-top:18px;padding:16px;background:#f7f3ed;border-radius:14px;line-height:1.7;word-break:break-word}.ok{color:#256d3e;font-weight:700}.error{color:#a32222;font-weight:700}.warn{color:#8a5b00;font-weight:700}code{background:#eee7dd;padding:2px 6px;border-radius:6px}@media(max-width:650px){.stats{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap"><main class="card">
+<small class="muted">LIFE ARCHIVE 2.0</small>
+<h1>Firestore 資料庫化搬家</h1>
+<p class="muted">把目前存在 Life Archive 本機資料中的章節與素材，拆成 Firestore 獨立文件。原本的整包雲端備份 <code>workspaces/writing-studio</code> 不會被刪除。</p>
+<div class="stats">
+  <div class="stat"><span class="muted">章節</span><strong id="chapterCount">—</strong></div>
+  <div class="stat"><span class="muted">素材</span><strong id="materialCount">—</strong></div>
+  <div class="stat"><span class="muted">設定</span><strong id="settingCount">—</strong></div>
+</div>
+<div class="row">
+  <button id="loginBtn" class="btn primary">Google 登入</button>
+  <button id="migrateBtn" class="btn primary" hidden>開始資料庫化</button>
+  <button id="verifyBtn" class="btn" hidden>重新驗證</button>
+  <a class="btn" href="index.html" style="text-decoration:none;color:inherit">回 Life Archive</a>
+</div>
+<div id="status" class="status">正在載入 Firebase…</div>
+</main></div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
+import { getFirestore, writeBatch, doc, collection, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
+
+const firebaseConfig={apiKey:"AIzaSyCaZnmoChuGKYUqRfYKgsV29liGqokiSjA",authDomain:"life-archive-2d4a6.firebaseapp.com",projectId:"life-archive-2d4a6",storageBucket:"life-archive-2d4a6.firebasestorage.app",messagingSenderId:"499371823629",appId:"1:499371823629:web:878bbd928bc86fc0197b44",measurementId:"G-C4NSZW459D"};
+const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app),provider=new GoogleAuthProvider();
+const KEY='life-archive-writing-studio-v1';
+const status=document.getElementById('status'),loginBtn=document.getElementById('loginBtn'),migrateBtn=document.getElementById('migrateBtn'),verifyBtn=document.getElementById('verifyBtn');
+const cCount=document.getElementById('chapterCount'),mCount=document.getElementById('materialCount'),sCount=document.getElementById('settingCount');
+let localData=null;
+
+function readLocal(){
+  try{localData=JSON.parse(localStorage.getItem(KEY)||'null')}catch{localData=null}
+  const chapters=Array.isArray(localData?.chapters)?localData.chapters:[];
+  const materials=Array.isArray(localData?.materials)?localData.materials:[];
+  cCount.textContent=chapters.length;mCount.textContent=materials.length;sCount.textContent=localData?'1':'0';
+  return {chapters,materials};
+}
+readLocal();
+
+loginBtn.onclick=async()=>{try{await signInWithPopup(auth,provider)}catch(err){status.innerHTML=`<span class="error">登入失敗</span><br>${err.code||''}<br>${err.message||err}`}};
+
+async function verify(){
+  const user=auth.currentUser;if(!user)return;
+  status.textContent='正在驗證 Firestore…';
+  try{
+    const [cs,ms]=await Promise.all([
+      getDocs(collection(db,'users',user.uid,'chapters')),
+      getDocs(collection(db,'users',user.uid,'materials'))
+    ]);
+    const expectedC=Array.isArray(localData?.chapters)?localData.chapters.length:0;
+    const expectedM=Array.isArray(localData?.materials)?localData.materials.length:0;
+    if(cs.size===expectedC&&ms.size===expectedM){
+      status.innerHTML=`<span class="ok">✓ 資料庫化完成</span><br>Firestore 章節：${cs.size} 筆<br>Firestore 素材：${ms.size} 筆<br><br>路徑：<br><code>users/${user.uid}/chapters</code><br><code>users/${user.uid}/materials</code>`;
+    }else{
+      status.innerHTML=`<span class="warn">資料已寫入，但數量和本機不同</span><br>本機：${expectedC} 章 / ${expectedM} 素材<br>Firestore：${cs.size} 章 / ${ms.size} 素材`;
+    }
+  }catch(err){status.innerHTML=`<span class="error">驗證失敗</span><br>${err.code||''}<br>${err.message||err}`}
+}
+
+migrateBtn.onclick=async()=>{
+  const user=auth.currentUser;if(!user)return;
+  const {chapters,materials}=readLocal();
+  if(!localData){status.innerHTML='<span class="error">找不到 Life Archive 本機資料。</span>';return}
+  if(!confirm(`準備把 ${chapters.length} 章與 ${materials.length} 筆素材拆成 Firestore 文件。\n\n原本整包雲端備份不會刪除。\n\n確定開始？`))return;
+  migrateBtn.disabled=true;status.textContent='正在拆分並寫入 Firestore…';
+  try{
+    const batch=writeBatch(db);
+    chapters.forEach((ch,i)=>{
+      const id=String(ch.id||`chapter-${i+1}`);
+      batch.set(doc(db,'users',user.uid,'chapters',id),{...ch,order:i,migratedAt:serverTimestamp()},{merge:true});
+    });
+    materials.forEach((m,i)=>{
+      const id=String(m.id||`material-${i+1}`);
+      batch.set(doc(db,'users',user.uid,'materials',id),{...m,order:i,migratedAt:serverTimestamp()},{merge:true});
+    });
+    batch.set(doc(db,'users',user.uid,'settings','book'),{
+      title:localData.title||'',core:localData.core||'',reader:localData.reader||'',raw:localData.raw||'',
+      parts:Array.isArray(localData.parts)?localData.parts:[],legacyProject:localData.legacyProject||null,
+      ...(localData.publishingProposal && typeof localData.publishingProposal==='object' ? {publishingProposal:localData.publishingProposal} : {}),
+      schemaVersion:3,migratedAt:serverTimestamp()
+    },{merge:true});
+    batch.set(doc(db,'users',user.uid,'meta','migration-v3'),{
+      chapterCount:chapters.length,materialCount:materials.length,source:'life-archive-writing-studio-v1',completedAt:serverTimestamp()
+    },{merge:true});
+    await batch.commit();
+    await verify();
+  }catch(err){console.error(err);status.innerHTML=`<span class="error">資料庫化失敗</span><br>${err.code||''}<br>${err.message||err}`}
+  finally{migrateBtn.disabled=false}
+};
+verifyBtn.onclick=verify;
+
+onAuthStateChanged(auth,user=>{
+  if(user){
+    loginBtn.hidden=true;migrateBtn.hidden=false;verifyBtn.hidden=false;
+    const {chapters,materials}=readLocal();
+    if(!localData)status.innerHTML='<span class="warn">已登入，但這個瀏覽器沒有 Life Archive 本機資料。請先回首頁「從雲端載入」。</span>';
+    else status.innerHTML=`<span class="ok">✓ 已登入</span><br>${user.email}<br>準備搬家：${chapters.length} 章、${materials.length} 筆素材。`;
+  }else{loginBtn.hidden=false;migrateBtn.hidden=true;verifyBtn.hidden=true;status.textContent='請先使用 Google 登入。'}
+});
+</script>
+</body>
+</html>

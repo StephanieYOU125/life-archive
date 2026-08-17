@@ -1,0 +1,65 @@
+/* Life Archive sidebar state: only the current page gets the cream highlight. */
+.nav a.active,
+.nav button.active {
+  background: #ead8c9 !important;
+  color: #3a2927 !important;
+  font-weight: 700 !important;
+}
+
+/* Backup/export is a normal navigation item unless it is the current view. */
+.nav .backup {
+  background: transparent !important;
+  color: #c5beb6 !important;
+  font-weight: 400 !important;
+}
+
+.nav .backup:hover {
+  background: #37322e !important;
+  color: #fff !important;
+}
+
+/* On the main studio, Photo Memories is just a normal link until opened. */
+.nav .photo-entry {
+  background: transparent !important;
+  color: #c5beb6 !important;
+  font-weight: 400 !important;
+}
+
+.nav .photo-entry:hover {
+  background: #37322e !important;
+  color: #fff !important;
+}
+
+/* Raw Source: keep the writing box aligned with the content panel. */
+#v-source .panel {
+  width: 100%;
+  overflow: hidden;
+}
+
+#sourceText {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-height: 520px;
+  margin: 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink);
+  line-height: 1.75;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+@media (max-width: 850px) {
+  #v-source .panel {
+    padding: 14px;
+  }
+
+  #sourceText {
+    min-height: 58vh;
+    padding: 12px;
+    font-size: 16px;
+  }
+}

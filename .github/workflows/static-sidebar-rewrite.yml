@@ -1,0 +1,55 @@
+name: Static sidebar rewrite
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  rewrite:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rewrite sidebar and timeline hook
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          old='''  <nav class="nav" id="nav">\n    <button data-v="compass">◎ 全書定位</button>\n    <button class="active" data-v="dashboard">⌂ 從哪裡開始</button>\n    <button data-v="triage">▦ 初稿整理台</button>\n    <button data-v="outline">☷ 章節地圖</button>\n    <button data-v="visual">✦ 圖像化寫作</button>\n    <button class="photo-entry" data-v="memories"><span>▧</span>照片回憶</button>\n    <button data-v="editor">✎ 章節編輯器</button>\n    <button data-v="materials">◇ 素材庫</button>\n    <button data-v="references">❝ 引用與借鏡</button>\n    <button data-v="diagnosis">⚑ 修稿檢查</button>\n    <button data-v="source">≡ 原始文字</button>\n    <button data-v="export">⇩ 備份與匯出</button>\n  </nav>'''
+          new='''  <nav class="nav" id="nav">\n    <button class="active" data-v="dashboard">⌂ 從哪裡開始</button>\n\n    <div class="workflow-group-label">01 · 整理人生</div>\n    <button data-v="timeline">◷ 人生時間軸</button>\n    <button data-v="memories">▧ 照片回憶</button>\n    <button data-v="source">≡ 原始文字</button>\n\n    <div class="workflow-group-label">02 · 建立素材</div>\n    <button data-v="materials">◇ 素材庫</button>\n    <button data-v="triage">▦ 文字拆解台</button>\n    <button data-v="visual">✦ 故事工作台</button>\n\n    <div class="workflow-group-label">03 · 設計一本書</div>\n    <button data-v="compass">◎ 全書定位</button>\n    <button data-v="outline">☷ 章節地圖</button>\n\n    <div class="workflow-group-label">04 · 開始寫作</div>\n    <button data-v="editor">✎ 章節編輯器</button>\n    <button data-v="references">❝ 引用與借鏡</button>\n    <button data-v="diagnosis">⚑ 修稿檢查</button>\n\n    <div class="workflow-group-label">05 · 保存</div>\n    <button data-v="export">⇩ 備份與匯出</button>\n  </nav>'''
+          if old in s:
+              s=s.replace(old,new)
+          elif '01 · 整理人生' not in s:
+              raise SystemExit('Expected old nav block not found')
+
+          s=s.replace('<h1>初稿整理台</h1><p>把還沒整理的文字先放進來，再選取值得留下的段落建立成素材。</p>',
+                      '<h1>文字拆解台</h1><p>把舊稿、筆記或一大段文字拆成可以重複使用的故事素材。</p>')
+          s=s.replace('<h1>圖像化寫作</h1><p>把素材依「靈感箱 → 發展中 → 可寫作 → 已放入章節」整理。</p>',
+                      '<h1>故事工作台</h1><p>把素材依「靈感箱 → 發展中 → 可寫作 → 已放入章節」推進。</p>')
+          p.write_text(s,encoding='utf-8')
+
+          p=Path('timeline.js')
+          s=p.read_text(encoding='utf-8')
+          old="""  const nav=document.getElementById('nav');\n  const refBtn=nav?.querySelector('[data-v=\"references\"]');\n  const btn=document.createElement('button');btn.dataset.v='timeline';btn.innerHTML='◷ 人生時間軸';\n  nav?.insertBefore(btn,refBtn||null);"""
+          new="""  const nav=document.getElementById('nav');\n  const refBtn=nav?.querySelector('[data-v=\"references\"]');\n  let btn=nav?.querySelector('[data-v=\"timeline\"]');\n  if(!btn){\n    btn=document.createElement('button');btn.dataset.v='timeline';btn.innerHTML='◷ 人生時間軸';\n    nav?.insertBefore(btn,refBtn||null);\n  }"""
+          if old in s:
+              s=s.replace(old,new)
+          p.write_text(s,encoding='utf-8')
+          PY
+
+      - name: Commit static sidebar
+        run: |
+          if git diff --quiet; then
+            echo "No changes needed"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html timeline.js
+          git commit -m "Write workflow sidebar directly into index"
+          git push
