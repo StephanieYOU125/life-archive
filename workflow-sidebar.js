@@ -8,7 +8,7 @@ const WORKFLOW=[
 ];
 
 const LABELS={
-  dashboard:'⌂ 從哪裡開始',timeline:'◷ 人生時間軸',memories:'▧ 照片回憶',source:'≡ 原始文字',
+  dashboard:'⌂ 今日工作台',timeline:'◷ 人生時間軸',memories:'▧ 照片回憶',source:'≡ 原始文字',
   materials:'◇ 素材庫',triage:'▦ 文字拆解台',visual:'✦ 故事工作台',compass:'◎ 全書定位',outline:'☷ 章節地圖',
   editor:'✎ 章節編輯器',references:'❝ 引用與借鏡',diagnosis:'⚑ 修稿檢查',export:'⇩ 備份與匯出'
 };
@@ -34,6 +34,7 @@ function openView(key){
     return;
   }
   window.LifeArchiveNavigate?.(key);
+  if(key==='dashboard')setTimeout(()=>window.LifeArchiveDashboard?.render?.(),0);
 }
 
 function buildSidebar(){
