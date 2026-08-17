@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>Life Archive｜Timeline 同步診斷</title>
+<style>
+:root{--bg:#f4f0e9;--panel:#fffdf9;--ink:#292521;--muted:#817970;--line:#ded5c9;--accent:#7b3945;--ok:#39784b;--bad:#9c4545}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Noto Sans TC",sans-serif}.wrap{max-width:760px;margin:auto;padding:28px 16px 60px}.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:20px;margin:14px 0}.eyebrow{font-size:11px;letter-spacing:.12em;color:var(--accent);font-weight:800}h1{font-family:Georgia,"Noto Serif TC",serif;margin:8px 0 12px}p{color:var(--muted);line-height:1.7}.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}button,input{font:inherit;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:white}button{cursor:pointer}button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}.status{font-size:13px;line-height:1.8;white-space:pre-wrap;word-break:break-word}.ok{color:var(--ok);font-weight:700}.bad{color:var(--bad);font-weight:700}.muted{color:var(--muted)}code{background:#eee7de;padding:2px 5px;border-radius:5px}.steps{line-height:1.9;padding-left:22px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card"><span class="eyebrow">LIFE ARCHIVE DIAGNOSTICS</span><h1>Timeline 跨裝置同步診斷</h1><p>這頁不會讀取或顯示你的私人 Timeline 內容，只測試登入、FireStore 權限，以及 Mac / iPhone 是否能看到同一個同步記號。</p></div>
+
+  <div class="card"><strong>1. 登入與規則狀態</strong><div class="row"><button class="primary" id="login">Google 登入</button><button id="logout" hidden>登出</button></div><div id="authStatus" class="status muted">尚未登入</div></div>
+
+  <div class="card"><strong>2. 這台裝置</strong><p>輸入容易辨認的名稱，例如 <code>Mac</code> 或 <code>iPhone</code>。</p><div class="row"><input id="device" placeholder="Mac / iPhone"><button id="write" disabled>寫入測試記號</button><button id="read" disabled>讀取雲端記號</button></div><div id="syncStatus" class="status muted">登入後即可測試。</div></div>
+
+  <div class="card"><strong>3. Mac ↔ iPhone 測試方法</strong><ol class="steps"><li>Mac 登入，裝置名稱填 <b>Mac</b>，按「寫入測試記號」。</li><li>iPhone 開同一頁並用同一個 Google 帳號登入。</li><li>iPhone 按「讀取雲端記號」。如果看到「來源裝置：Mac」，代表 Firestore 跨裝置讀取成功。</li><li>iPhone 改填 <b>iPhone</b>，按「寫入測試記號」。</li><li>回 Mac 按「讀取雲端記號」。如果看到「來源裝置：iPhone」，雙向同步通道正常。</li></ol></div>
+</div>
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js';
+import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js';
+
+const firebaseConfig={apiKey:'AIzaSyCaZnmoChuGKYUqRfYKgsV29liGqokiSjA',authDomain:'life-archive-2d4a6.firebaseapp.com',projectId:'life-archive-2d4a6',storageBucket:'life-archive-2d4a6.firebasestorage.app',messagingSenderId:'499371823629',appId:'1:499371823629:web:878bbd928bc86fc0197b44',measurementId:'G-C4NSZW459D'};
+const app=initializeApp(firebaseConfig);const auth=getAuth(app);const db=getFirestore(app);const provider=new GoogleAuthProvider();
+const $=id=>document.getElementById(id);let user=null;
+$('device').value=/iPhone|iPad|iPod/i.test(navigator.userAgent)?'iPhone':'Mac';
+
+function setAuth(text,ok=false){$('authStatus').textContent=text;$('authStatus').className='status '+(ok?'ok':'muted')}
+function setSync(text,ok=false,bad=false){$('syncStatus').textContent=text;$('syncStatus').className='status '+(bad?'bad':ok?'ok':'muted')}
+$('login').onclick=async()=>{try{await signInWithPopup(auth,provider)}catch(e){setAuth(`登入失敗：${e.code||e.message}`)}};
+$('logout').onclick=()=>signOut(auth);
+
+onAuthStateChanged(auth,u=>{user=u||null;$('login').hidden=!!user;$('logout').hidden=!user;$('write').disabled=!user;$('read').disabled=!user;if(user)setAuth(`✓ 已登入\n${user.email||''}\nUID：${user.uid}`,true);else setAuth('尚未登入');});
+
+$('write').onclick=async()=>{if(!user)return;const label=$('device').value.trim()||'未命名裝置';setSync('正在寫入 Firestore…');try{await setDoc(doc(db,'users',user.uid,'diagnostics','timeline-device-test'),{device:label,clientTime:new Date().toISOString(),updatedAt:serverTimestamp()},{merge:true});setSync(`✓ 寫入成功\n來源裝置：${label}\n現在請到另一台裝置按「讀取雲端記號」。`,true)}catch(e){setSync(`✗ 寫入失敗\n${e.code||''}\n${e.message||e}`,false,true)}};
+
+$('read').onclick=async()=>{if(!user)return;setSync('正在讀取 Firestore…');try{const snap=await getDoc(doc(db,'users',user.uid,'diagnostics','timeline-device-test'));if(!snap.exists()){setSync('尚未找到測試記號。請先在另一台裝置寫入。');return}const d=snap.data();setSync(`✓ 讀取成功\n來源裝置：${d.device||'未知'}\n用戶端時間：${d.clientTime||'未提供'}\n\n如果來源裝置名稱是另一台裝置，代表跨裝置 Firestore 通道正常。`,true)}catch(e){setSync(`✗ 讀取失敗\n${e.code||''}\n${e.message||e}`,false,true)}};
+</script>
+</body>
+</html>
