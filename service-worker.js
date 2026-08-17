@@ -1,5 +1,5 @@
-const CACHE_NAME='life-archive-pwa-v6';
-const APP_SHELL=['./','./index.html','./app.html?v=8','./manifest.webmanifest','./app-icon.svg','./firebase-cloud-sync.js','./mobile-auth.js'];
+const CACHE_NAME='life-archive-pwa-v7';
+const APP_SHELL=['./','./index.html','./app.html?v=9','./manifest.webmanifest','./app-icon.svg','./firebase-cloud-sync.js','./mobile-auth.js'];
 
 self.addEventListener('install',e=>{
   e.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(APP_SHELL)));
@@ -14,8 +14,9 @@ self.addEventListener('activate',e=>{
 async function injectModules(response, requestUrl){
   if(!response || !response.ok) return response;
   const url=new URL(requestUrl);
-  const isHome=url.pathname.endsWith('/life-archive/') || url.pathname.endsWith('/life-archive/index.html');
-  const isPhoto=url.pathname.endsWith('/life-archive/app.html');
+  const path=url.pathname;
+  const isHome=path==='/' || path.endsWith('/index.html') || path.endsWith('/life-archive/');
+  const isPhoto=path.endsWith('/app.html') || path.endsWith('/life-archive/app.html');
   if(!isHome && !isPhoto) return response;
   const type=response.headers.get('content-type')||'';
   if(!type.includes('text/html')) return response;
@@ -33,8 +34,8 @@ async function injectModules(response, requestUrl){
 
 function latestRequest(request){
   const url=new URL(request.url);
-  if(url.pathname.endsWith('/life-archive/app.html') && !url.searchParams.has('v')){
-    url.searchParams.set('v','8');
+  if(url.pathname.endsWith('/app.html') && !url.searchParams.has('v')){
+    url.searchParams.set('v','9');
     return new Request(url.toString(),request);
   }
   return request;
