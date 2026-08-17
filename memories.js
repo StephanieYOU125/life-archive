@@ -7,6 +7,76 @@
 
   const uid=()=>crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2);
 
+  function showView(view){
+    document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+    q('#v-'+view)?.classList.add('active');
+    document.querySelectorAll('#nav button[data-v]').forEach(x=>x.classList.toggle('active',x.dataset.v===view));
+    const crumb=q('#crumb');
+    if(crumb){
+      const labels={compass:'全書定位',dashboard:'從哪裡開始',triage:'初稿整理台',outline:'章節地圖',visual:'圖像化寫作',memories:'照片回憶',editor:'章節編輯器',materials:'素材庫',references:'引用與借鏡',diagnosis:'修稿檢查',source:'原始文字',export:'備份與匯出'};
+      crumb.textContent=labels[view]||'';
+    }
+    q('#side')?.classList.remove('open');
+    if(view==='memories') render();
+  }
+
+  function ensureUI(){
+    const nav=q('#nav');
+    if(nav){
+      nav.innerHTML=`
+        <button data-v="compass">◎ 全書定位</button>
+        <button class="active" data-v="dashboard">⌂ 從哪裡開始</button>
+        <button data-v="triage">▦ 初稿整理台</button>
+        <button data-v="outline">☷ 章節地圖</button>
+        <button data-v="visual">✦ 圖像化寫作</button>
+        <button class="photo-entry" data-v="memories"><span>▧</span>照片回憶</button>
+        <button data-v="editor">✎ 章節編輯器</button>
+        <button data-v="materials">◇ 素材庫</button>
+        <button data-v="references">❝ 引用與借鏡</button>
+        <button data-v="diagnosis">⚑ 修稿檢查</button>
+        <button data-v="source">≡ 原始文字</button>
+        <button data-v="export">⇩ 備份與匯出</button>`;
+      nav.querySelectorAll('button[data-v]').forEach(button=>button.addEventListener('click',()=>showView(button.dataset.v)));
+    }
+
+    if(!q('#v-memories')){
+      const section=document.createElement('section');
+      section.className='view';
+      section.id='v-memories';
+      section.innerHTML=`
+        <div class="heading">
+          <div>
+            <span class="eyebrow">PHOTO → MEMORY → STORY</span>
+            <h1>照片回憶</h1>
+            <p>從照片找回當時發生的事情。照片只保存在這台裝置的瀏覽器，不會上傳到 GitHub。</p>
+          </div>
+          <div class="mem-top-actions"><button class="btn" id="memExport">匯出照片 JSON</button></div>
+        </div>
+        <div class="mem-local-note"><strong>本機照片模式</strong><br>程式碼在 GitHub；私人照片存在瀏覽器 IndexedDB。換裝置或清除瀏覽器網站資料前，請先匯出照片 JSON 備份。</div>
+        <div class="mem-drop">
+          <strong>＋ 新增回憶</strong>
+          <p class="muted">可以從電腦或手機選照片，也可以先建立一筆純文字回憶。</p>
+          <div class="mem-add-actions">
+            <label class="btn primary">📷 拍照<input id="memCamera" class="mem-hidden" type="file" accept="image/*" capture="environment"></label>
+            <label class="btn">🖼 從相簿選擇<input id="memFiles" class="mem-hidden" type="file" accept="image/*" multiple></label>
+            <button class="btn" id="memTextMemory">✎ 純文字回憶</button>
+          </div>
+        </div>
+        <div id="memGrid" class="mem-grid"></div>`;
+      q('main.main')?.appendChild(section);
+    }
+
+    document.querySelectorAll('a[href="app.html"],a[href="./app.html"],a[href="/app.html"]').forEach(link=>{
+      const button=document.createElement('button');
+      button.className=link.className||'btn';
+      button.type='button';
+      button.innerHTML=link.innerHTML;
+      button.style.cssText=link.style.cssText;
+      button.addEventListener('click',()=>showView('memories'));
+      link.replaceWith(button);
+    });
+  }
+
   function blankMemory(extra={}){
     const now=new Date().toISOString();
     return {id:uid(),image:'',name:'',title:'',when:'',stage:'其他',place:'',feeling:'',tags:'',chapterIds:'',story:'',created:now,updated:now,...extra};
@@ -146,8 +216,7 @@
       items.push(item);
     }
     render();
-    const section=q('#v-memories');
-    section?.scrollIntoView({behavior:'smooth',block:'start'});
+    q('#v-memories')?.scrollIntoView({behavior:'smooth',block:'start'});
   }
 
   function bind(){
@@ -194,10 +263,10 @@
     render();
   });
 
-  window.lifeArchiveMemories={getItems:()=>items.map(x=>({...x})),render};
+  window.lifeArchiveMemories={getItems:()=>items.map(x=>({...x})),render,showView};
 
   async function init(){
-    if(!q('#v-memories')) return;
+    ensureUI();
     bind();
     try{
       await open();
