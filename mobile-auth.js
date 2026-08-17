@@ -1,9 +1,10 @@
 import { getApps, getApp, initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
 
+const isFirebaseHosting = location.hostname.endsWith('.web.app') || location.hostname.endsWith('.firebaseapp.com');
 const firebaseConfig = {
   apiKey: "AIzaSyCaZnmoChuGKYUqRfYKgsV29liGqokiSjA",
-  authDomain: "life-archive-2d4a6.firebaseapp.com",
+  authDomain: isFirebaseHosting ? location.hostname : "life-archive-2d4a6.firebaseapp.com",
   projectId: "life-archive-2d4a6",
   storageBucket: "life-archive-2d4a6.firebasestorage.app",
   messagingSenderId: "499371823629",
@@ -50,7 +51,7 @@ async function finishRedirect() {
     }
     if (pending && !auth.currentUser) {
       sessionStorage.removeItem(REDIRECT_PENDING);
-      setStatus('Google 登入已返回，但瀏覽器沒有保留登入狀態。請再按一次 Google 登入；若仍失敗，改用 Safari 一般分頁開啟網站。');
+      setStatus('Google 登入已返回，但尚未取得登入狀態。請重新整理頁面後再試一次。');
     }
   } catch (err) {
     console.error('Firebase redirect sign-in failed', err);
@@ -59,7 +60,6 @@ async function finishRedirect() {
   }
 }
 
-// Capture phase runs before the existing popup onclick handlers.
 document.addEventListener('click', async event => {
   const button = event.target.closest?.('#cloudLogin, #loginBtn');
   if (!button || !isMobileOrStandalone()) return;
