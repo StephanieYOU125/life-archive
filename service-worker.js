@@ -1,4 +1,4 @@
-const CACHE_NAME='life-archive-pwa-v31';
+const CACHE_NAME='life-archive-pwa-v32';
 const APP_SHELL=['./','./index.html','./manifest.webmanifest','./app-icon.svg','./firebase-cloud-sync.js','./mobile-auth.js','./sidebar-active.css','./book-positioning.js','./book-positioning-ui.js','./submission-materials-migration.js','./materials-editor.js','./timeline.js',
   './timeline-cloud-sync.js','./workflow-sidebar.js','./dashboard-workspace.js','./chapter-editor-plus.js','./references-editor.js','./psychology-lenses.js','./revision-editor.js','./memories.css','./memories.js'];
 
