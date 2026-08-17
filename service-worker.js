@@ -1,5 +1,5 @@
-const CACHE_NAME='life-archive-pwa-v7';
-const APP_SHELL=['./','./index.html','./app.html?v=9','./manifest.webmanifest','./app-icon.svg','./firebase-cloud-sync.js','./mobile-auth.js'];
+const CACHE_NAME='life-archive-pwa-v8';
+const APP_SHELL=['./','./index.html','./app.html?v=10','./manifest.webmanifest','./app-icon.svg','./firebase-cloud-sync.js','./mobile-auth.js','./sidebar-active.css'];
 
 self.addEventListener('install',e=>{
   e.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(APP_SHELL)));
@@ -21,6 +21,9 @@ async function injectModules(response, requestUrl){
   const type=response.headers.get('content-type')||'';
   if(!type.includes('text/html')) return response;
   let html=await response.text();
+  if(!html.includes('sidebar-active.css')){
+    html=html.replace('</head>','<link rel="stylesheet" href="./sidebar-active.css"></head>');
+  }
   if(isHome && !html.includes('firebase-cloud-sync.js')){
     html=html.replace('</body>','<script type="module" src="./firebase-cloud-sync.js"></script></body>');
   }
@@ -35,7 +38,7 @@ async function injectModules(response, requestUrl){
 function latestRequest(request){
   const url=new URL(request.url);
   if(url.pathname.endsWith('/app.html') && !url.searchParams.has('v')){
-    url.searchParams.set('v','9');
+    url.searchParams.set('v','10');
     return new Request(url.toString(),request);
   }
   return request;
