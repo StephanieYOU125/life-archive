@@ -1,5 +1,5 @@
-const CACHE_NAME='life-archive-pwa-v12';
-const APP_SHELL=['./','./index.html','./app.html?v=11','./manifest.webmanifest','./app-icon.svg','./firebase-cloud-sync.js','./mobile-auth.js','./sidebar-active.css','./book-positioning.js'];
+const CACHE_NAME='life-archive-pwa-v13';
+const APP_SHELL=['./','./index.html','./app.html?v=11','./manifest.webmanifest','./app-icon.svg','./firebase-cloud-sync.js','./mobile-auth.js','./sidebar-active.css','./book-positioning.js','./book-positioning-ui.js'];
 
 self.addEventListener('install',e=>{
   e.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(APP_SHELL)));
@@ -38,6 +38,9 @@ async function prepareResponse(response, requestUrl){
     }
     if(isHome && !body.includes('book-positioning.js')){
       body=body.replace('</body>','<script type="module" src="./book-positioning.js"></script></body>');
+    }
+    if(isHome && !body.includes('book-positioning-ui.js')){
+      body=body.replace('</body>','<script type="module" src="./book-positioning-ui.js"></script></body>');
     }
     if(!body.includes('mobile-auth.js')){
       body=body.replace('</body>','<script type="module" src="./mobile-auth.js"></script></body>');

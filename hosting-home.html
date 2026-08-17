@@ -22,6 +22,7 @@
         const cloudUrl = URL.createObjectURL(new Blob([cloudCode],{type:'text/javascript'}));
         try { await import(cloudUrl); } finally { URL.revokeObjectURL(cloudUrl); }
         await import('./book-positioning.js');
+        await import('./book-positioning-ui.js');
         await import('./mobile-auth.js');
       <\/script></body>`);
       document.open();
