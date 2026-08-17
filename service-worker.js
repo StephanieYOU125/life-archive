@@ -1,4 +1,4 @@
-const CACHE_NAME='life-archive-pwa-v9';
+const CACHE_NAME='life-archive-pwa-v10';
 const APP_SHELL=['./','./index.html','./app.html?v=11','./manifest.webmanifest','./app-icon.svg','./firebase-cloud-sync.js','./mobile-auth.js','./sidebar-active.css'];
 
 self.addEventListener('install',e=>{
@@ -69,9 +69,6 @@ function latestRequest(request){
 self.addEventListener('fetch',e=>{
   if(e.request.method!=='GET') return;
   const originalUrl=new URL(e.request.url);
-
-  // Firebase Hosting reserves /__/ for Auth and other platform services.
-  // Never intercept these routes with the PWA cache/fallback logic.
   if(originalUrl.pathname.startsWith('/__/')) return;
 
   e.respondWith((async()=>{
