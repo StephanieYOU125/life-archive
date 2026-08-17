@@ -42,6 +42,13 @@ function renamePageHeadings(){
 
 function arrange(){
   const nav=document.getElementById('nav');if(!nav)return false;
+  if(!nav.querySelector('[data-v="timeline"]')){
+    const btn=document.createElement('button');
+    btn.dataset.v='timeline';
+    btn.textContent=LABELS.timeline;
+    const source=nav.querySelector('[data-v="source"]');
+    nav.insertBefore(btn,source||null);
+  }
   const buttons=new Map([...nav.querySelectorAll('button[data-v]')].map(b=>[b.dataset.v,b]));
   nav.querySelectorAll('.workflow-group-label,.workflow-divider').forEach(x=>x.remove());
   Object.entries(LABELS).forEach(([key,label])=>{const btn=buttons.get(key);if(btn){btn.textContent=label;btn.classList.remove('photo-entry')}});

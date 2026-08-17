@@ -1,38 +1,13 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <title>Life Archive</title>
-  <style>body{margin:0;background:#f4f0e9;font-family:-apple-system,BlinkMacSystemFont,"Noto Sans TC",sans-serif;color:#292521}.loading{min-height:100vh;display:grid;place-items:center}.loading div{background:#fffdf9;border:1px solid #ded5c9;border-radius:16px;padding:18px 22px}</style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="refresh" content="0;url=./index.html">
+<title>Life Archive</title>
 </head>
 <body>
-  <div class="loading"><div>正在開啟 Life Archive…</div></div>
-  <script>
-    (async()=>{
-      const res=await fetch('./index.html',{cache:'no-store'});
-      let html=await res.text();
-      html=html.replaceAll('href="app.html"','href="/app.html"');
-      html=html.replace('</head>','<link rel="stylesheet" href="./sidebar-active.css"></head>');
-      html=html.replace('</body>',`<script type="module">
-        const cloudRes = await fetch('./firebase-cloud-sync.js',{cache:'no-store'});
-        let cloudCode = await cloudRes.text();
-        if (location.hostname.endsWith('.web.app') || location.hostname.endsWith('.firebaseapp.com')) {
-          cloudCode = cloudCode.replace('authDomain: "life-archive-2d4a6.firebaseapp.com"', 'authDomain: "' + location.hostname + '"');
-        }
-        const cloudUrl = URL.createObjectURL(new Blob([cloudCode],{type:'text/javascript'}));
-        try { await import(cloudUrl); } finally { URL.revokeObjectURL(cloudUrl); }
-        await import('./book-positioning.js');
-        await import('./book-positioning-ui.js');
-        await import('./mobile-auth.js');
-      <\/script></body>`);
-      document.open();
-      document.write(html);
-      document.close();
-    })().catch(err=>{
-      console.error(err);
-      document.body.innerHTML='<div class="loading"><div>首頁載入失敗，請重新整理。</div></div>';
-    });
-  </script>
+<script>location.replace('./index.html');</script>
+<a href="./index.html">開啟 Life Archive</a>
 </body>
 </html>
