@@ -1,3 +1,5 @@
+import './submission-materials-migration.js';
+
 const GROUPS = [
   {
     id:'core',
@@ -191,7 +193,6 @@ function redesign(proposal){
     if(child!==workspace && !child.classList.contains('proposal-heading')) child.style.display='none';
   });
 
-  // Cards were moved into workspace; reveal them again.
   workspace.querySelectorAll('.proposal-section').forEach(x=>x.style.display='block');
 
   overview.querySelectorAll('[data-jump]').forEach(button=>{
