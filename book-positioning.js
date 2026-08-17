@@ -1,5 +1,7 @@
+const LOCAL_KEY='life-archive-writing-studio-v1';
+
 const proposalSections = [
-  ['(1) 作者介紹', `游文歆，畢業於中央警察大學交通學系，現任職於臺北市政府警察局，具有約六年的警政與行政實務經驗，並於在職期間取得國立臺灣大學土木工程學系交通工程組碩士學位。
+  ['author','作者介紹', `游文歆，畢業於中央警察大學交通學系，現任職於臺北市政府警察局，具有約六年的警政與行政實務經驗，並於在職期間取得國立臺灣大學土木工程學系交通工程組碩士學位。
 
 在警察工作中，她接觸交通安全、行政協調、風險處理與突發事件，逐漸理解，真正的安全不能只依靠個人的小心，而必須透過制度、程序、溝通與團隊合作共同建立。
 
@@ -14,10 +16,10 @@ const proposalSections = [
 她希望透過《30歲前，先去做一次》，記錄30歲以前的30次真實嘗試（從100項挑戰中挑出最精華的30次），分享自己如何從行動中認識能力、興趣、限制與選擇。這不是一本只記錄成功的成就清單，而是一本關於如何勇敢嘗試，同時為自己保留修正空間的人生探索書。
 
 她相信，人生不一定要先找到標準答案才能開始。真正重要的，不是要求自己每次都選對，而是學習成為自己人生的安全系統設計者，讓每一次行動都成為更了解自己、也更接近理想生活的機會。`],
-  ['一、書名', '《30歲前，先去做一次》'],
-  ['二、副標題', '我用100次挑戰，走出一條沒有標準答案的人生\n（加上「Safety Systems Designer（安全系統設計者）」）'],
-  ['三、書籍類型', '個人成長／人生探索／職涯選擇／真實經驗／自我實驗'],
-  ['四、核心概念', `Safety Systems Designer：不是避免冒險，而是讓自己有能力不斷嘗試
+  ['title','一、書名', '《30歲前，先去做一次》'],
+  ['subtitle','二、副標題', '我用100次挑戰，走出一條沒有標準答案的人生\n（加上「Safety Systems Designer（安全系統設計者）」）'],
+  ['genre','三、書籍類型', '個人成長／人生探索／職涯選擇／真實經驗／自我實驗'],
+  ['concept','四、核心概念', `Safety Systems Designer：不是避免冒險，而是讓自己有能力不斷嘗試
 
 這不是一本教讀者如何在30歲以前完成多少成就的成功學，也不是一張「人生必做清單」。
 
@@ -90,8 +92,8 @@ const proposalSections = [
 
 如果答案是可以，
 那麼，也許就值得先去做一次。`],
-  ['五、一句話介紹', '一本以30次真實挑戰為案例，陪伴讀者在還沒有完整答案以前，透過行動認識自己、控制風險，並走出個人道路的成長書。'],
-  ['六、書籍主張', `人生不是選擇題，沒有一個所有人都適用的標準答案。
+  ['oneLiner','五、一句話介紹', '一本以30次真實挑戰為案例，陪伴讀者在還沒有完整答案以前，透過行動認識自己、控制風險，並走出個人道路的成長書。'],
+  ['claims','六、書籍主張', `人生不是選擇題，沒有一個所有人都適用的標準答案。
 真正重要的，不是要求自己第一次就做出完美選擇，而是學會：
 1. 看見自己真正想嘗試的是什麼。
 2. 分辨這是自己的渴望，還是他人的期待。
@@ -103,7 +105,7 @@ const proposalSections = [
 
 本書希望傳達：
 「不必等到準備完善，才有資格開始；但也不需要為了勇敢，承擔自己無法承受的代價。」`],
-  ['七、目標讀者', `本書主要讀者為18至35歲，正處於升學、求職、轉職、進修或人生方向選擇階段的人。
+  ['audience','七、目標讀者', `本書主要讀者為18至35歲，正處於升學、求職、轉職、進修或人生方向選擇階段的人。
 尤其適合：
 • 不確定自己真正想要什麼的人。
 • 害怕做錯選擇，因此遲遲不敢開始的人。
@@ -112,7 +114,7 @@ const proposalSections = [
 • 接近30歲，因同儕比較而感到焦慮的人。
 • 容易把失敗解讀成自我否定的人。
 • 想改變現況，卻不知道第一步應該做什麼的人。`],
-  ['八、讀者痛點', `許多人從小被要求及早確定方向，彷彿選錯科系、工作或人生道路，就會浪費時間。
+  ['painPoints','八、讀者痛點', `許多人從小被要求及早確定方向，彷彿選錯科系、工作或人生道路，就會浪費時間。
 社群媒體又不斷呈現別人的成就，使人容易產生以下焦慮：
 • 為什麼別人已經知道自己要什麼，我卻還不知道？
 • 我已經投入這麼多時間，現在改變是不是太晚？
@@ -122,7 +124,7 @@ const proposalSections = [
 • 三十歲以前，我是不是應該已經成為某種人？
 
 本書不會提供唯一答案，而是透過作者的真實經歷，陪讀者建立一套能夠探索、判斷與修正的人生方法。`],
-  ['九、內容特色', `1. 真實經歷，而非抽象勵志
+  ['features','九、內容特色', `1. 真實經歷，而非抽象勵志
 本書包含成功、失敗、未完成與改變方向的經驗，不只呈現漂亮成果，也保留猶豫、挫折及不確定。
 
 2. 跨領域的人生素材
@@ -136,15 +138,67 @@ const proposalSections = [
 
 5. 每章都有可實踐的反思
 每個故事後將設計簡短的讀者提問或行動練習，使本書不只是作者自傳，也能成為讀者的人生探索工具。`],
-  ['十、作者背景與寫作優勢', `游文歆，畢業於中央警察大學交通學系，現任職於臺北市政府警察局，具有約六年的警政與行政實務經驗，並於在職期間取得國立臺灣大學土木工程學系交通工程組碩士學位。
+  ['authorStrength','十、作者背景與寫作優勢', `游文歆，畢業於中央警察大學交通學系，現任職於臺北市政府警察局，具有約六年的警政與行政實務經驗，並於在職期間取得國立臺灣大學土木工程學系交通工程組碩士學位。
 
 研究所期間，她將交通安全與人工智慧技術結合，運用電腦視覺分析行人與車輛互動，完成行人穿越安全相關研究，並獲得論文獎項肯定。
 
 她曾赴日本進行交換研究，也曾前往法國參與國際志工計畫。工作與研究之外，她持續挑戰不同領域，包含全程馬拉松、田徑、桌球、柔道、烘焙、西餐、美容、潛水、舞蹈、空中瑜伽及公開演說。
 
 她的寫作特色，在於能將警政實務、交通安全、工程分析及個人成長經驗相互連結，從真實故事中整理出關於風險、選擇、紀律、失敗與修正的方法。`],
-  ['十一、全書架構', '本次提供的內容只有「十一、全書架構」標題，尚未提供架構正文。']
+  ['structure','十一、全書架構', '']
 ];
+
+function readState(){
+  try{return JSON.parse(localStorage.getItem(LOCAL_KEY)||'{}')||{}}catch{return {}}
+}
+
+function defaults(){
+  return Object.fromEntries(proposalSections.map(([key,,text])=>[key,text]));
+}
+
+function currentProposal(){
+  const state=readState();
+  return {...defaults(),...(state.publishingProposal||{})};
+}
+
+// Preserve proposal data when the original studio saves other fields.
+const previousSetItem=Storage.prototype.setItem;
+Storage.prototype.setItem=function(key,value){
+  if(this===localStorage && key===LOCAL_KEY){
+    try{
+      const next=JSON.parse(value);
+      const existing=readState().publishingProposal;
+      if(existing && !next.publishingProposal) next.publishingProposal=existing;
+      value=JSON.stringify(next);
+    }catch{}
+  }
+  return previousSetItem.call(this,key,value);
+};
+
+function saveProposalField(key,value){
+  const state=readState();
+  state.publishingProposal={...defaults(),...(state.publishingProposal||{}),[key]:value};
+  localStorage.setItem(LOCAL_KEY,JSON.stringify(state));
+  const saved=document.getElementById('saved');
+  if(saved) saved.textContent='已自動儲存在本機';
+}
+
+function autoGrow(textarea){
+  textarea.style.height='auto';
+  const max=560;
+  textarea.style.height=Math.min(Math.max(textarea.scrollHeight,110),max)+'px';
+}
+
+function downloadMergedBackup(){
+  const state=readState();
+  state.publishingProposal={...defaults(),...(state.publishingProposal||{})};
+  const url=URL.createObjectURL(new Blob([JSON.stringify(state,null,2)],{type:'application/json'}));
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='life-archive-writing-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),500);
+}
 
 function mountBookPositioning(){
   const compass=document.getElementById('v-compass');
@@ -161,25 +215,68 @@ function mountBookPositioning(){
     .proposal-section summary::-webkit-details-marker{display:none}
     .proposal-section summary::after{content:'＋';float:right;color:var(--muted)}
     .proposal-section[open] summary::after{content:'－'}
-    .proposal-copy{white-space:pre-wrap;line-height:1.9;padding:0 18px 20px;color:var(--ink)}
-    @media(max-width:850px){.proposal-copy{font-size:15px;line-height:1.85}.proposal-heading h2{font-size:24px}}
+    .proposal-editor-wrap{padding:0 18px 18px}
+    .proposal-editor{display:block;width:100%;min-height:110px;max-height:560px;overflow:auto;resize:vertical;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);padding:13px 14px;line-height:1.8;box-sizing:border-box;font:inherit}
+    .proposal-editor:focus{outline:2px solid rgba(123,57,69,.18);border-color:var(--accent)}
+    .proposal-save{display:block;color:var(--muted);font-size:11px;margin-top:7px}
+    @media(max-width:850px){.proposal-editor{font-size:16px;line-height:1.75}.proposal-heading h2{font-size:24px}.proposal-editor-wrap{padding:0 14px 14px}}
   `;
   document.head.appendChild(style);
 
+  const values=currentProposal();
   const wrap=document.createElement('div');
   wrap.id='publishingProposal';
   wrap.className='publishing-proposal';
-  wrap.innerHTML='<div class="proposal-heading"><span class="eyebrow">PUBLISHING PROPOSAL</span><h2>出版企劃大綱</h2><p>《30歲前，先去做一次》｜Safety Systems Designer（安全系統設計者）</p></div>';
+  wrap.innerHTML='<div class="proposal-heading"><span class="eyebrow">PUBLISHING PROPOSAL</span><h2>出版企劃大綱</h2><p>每一格都可以直接編輯，輸入後會自動儲存。</p></div>';
 
-  proposalSections.forEach(([title,text],i)=>{
+  proposalSections.forEach(([key,title],i)=>{
     const details=document.createElement('details');
     details.className='proposal-section';
-    if(i===0 || title==='四、核心概念') details.open=true;
-    const summary=document.createElement('summary'); summary.textContent=title;
-    const copy=document.createElement('div'); copy.className='proposal-copy'; copy.textContent=text;
-    details.append(summary,copy); wrap.appendChild(details);
+    if(i===0 || key==='concept') details.open=true;
+
+    const summary=document.createElement('summary');
+    summary.textContent=title;
+
+    const editorWrap=document.createElement('div');
+    editorWrap.className='proposal-editor-wrap';
+    const textarea=document.createElement('textarea');
+    textarea.className='proposal-editor';
+    textarea.dataset.proposalKey=key;
+    textarea.value=values[key]||'';
+    textarea.placeholder='在這裡輸入內容……';
+    const state=document.createElement('small');
+    state.className='proposal-save';
+    state.textContent='✓ 已自動儲存';
+
+    let timer=null;
+    textarea.addEventListener('input',()=>{
+      state.textContent='儲存中…';
+      autoGrow(textarea);
+      clearTimeout(timer);
+      timer=setTimeout(()=>{
+        saveProposalField(key,textarea.value);
+        state.textContent='✓ 已自動儲存';
+      },350);
+    });
+    details.addEventListener('toggle',()=>{if(details.open) requestAnimationFrame(()=>autoGrow(textarea))});
+
+    editorWrap.append(textarea,state);
+    details.append(summary,editorWrap);
+    wrap.appendChild(details);
+    requestAnimationFrame(()=>autoGrow(textarea));
   });
   compass.appendChild(wrap);
+
+  // Make the existing JSON backup buttons export the latest proposal too.
+  ['backupTop','exportJson'].forEach(id=>{
+    const button=document.getElementById(id);
+    if(!button) return;
+    button.addEventListener('click',event=>{
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      downloadMergedBackup();
+    },true);
+  });
 }
 
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',mountBookPositioning,{once:true});
