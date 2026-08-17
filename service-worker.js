@@ -1,4 +1,4 @@
-const CACHE_NAME='life-archive-pwa-v11';
+const CACHE_NAME='life-archive-pwa-v12';
 const APP_SHELL=['./','./index.html','./app.html?v=11','./manifest.webmanifest','./app-icon.svg','./firebase-cloud-sync.js','./mobile-auth.js','./sidebar-active.css','./book-positioning.js'];
 
 self.addEventListener('install',e=>{
