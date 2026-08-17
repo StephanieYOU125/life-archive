@@ -1,4 +1,4 @@
-const CACHE_NAME='life-archive-pwa-v3';
+const CACHE_NAME='life-archive-pwa-v4';
 const APP_SHELL=['./','./index.html','./app.html','./manifest.webmanifest','./app-icon.svg','./firebase-cloud-sync.js'];
 
 self.addEventListener('install',e=>{
@@ -31,7 +31,7 @@ self.addEventListener('fetch',e=>{
   if(e.request.method!=='GET') return;
   e.respondWith((async()=>{
     try{
-      const network=await fetch(e.request);
+      const network=await fetch(e.request,{cache:'no-store'});
       const served=await withCloudModule(network.clone(),e.request.url);
       if(network&&network.ok){
         const cacheCopy=served.clone();
