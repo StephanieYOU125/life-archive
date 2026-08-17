@@ -1,6 +1,6 @@
-const CACHE_NAME='life-archive-pwa-v25';
+const CACHE_NAME='life-archive-pwa-v26';
 const APP_SHELL=['./','./index.html','./manifest.webmanifest','./app-icon.svg','./firebase-cloud-sync.js','./mobile-auth.js','./sidebar-active.css','./book-positioning.js','./book-positioning-ui.js','./submission-materials-migration.js','./materials-editor.js','./timeline.js',
-  './timeline-cloud-sync.js','./workflow-sidebar.js','./references-editor.js','./psychology-lenses.js','./revision-editor.js','./memories.css','./memories.js'];
+  './timeline-cloud-sync.js','./workflow-sidebar.js','./dashboard-workspace.js','./references-editor.js','./psychology-lenses.js','./revision-editor.js','./memories.css','./memories.js'];
 
 self.addEventListener('install',e=>{
   e.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(APP_SHELL)));
@@ -33,6 +33,7 @@ async function prepareResponse(response, requestUrl){
     if(!body.includes('sidebar-active.css')) body=body.replace('</head>','<link rel="stylesheet" href="./sidebar-active.css"></head>');
     if(!body.includes('memories.css')) body=body.replace('</head>','<link rel="stylesheet" href="./memories.css"></head>');
     if(!body.includes('workflow-sidebar.js')) body=body.replace('</body>','<script src="./workflow-sidebar.js"></script></body>');
+    if(!body.includes('dashboard-workspace.js')) body=body.replace('</body>','<script src="./dashboard-workspace.js"></script></body>');
     if(!body.includes('firebase-cloud-sync.js')) body=body.replace('</body>','<script type="module" src="./firebase-cloud-sync.js"></script></body>');
     if(!body.includes('book-positioning.js')) body=body.replace('</body>','<script type="module" src="./book-positioning.js"></script></body>');
     if(!body.includes('book-positioning-ui.js')) body=body.replace('</body>','<script type="module" src="./book-positioning-ui.js"></script></body>');
