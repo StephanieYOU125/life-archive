@@ -1,0 +1,32 @@
+name: Firestore rules test
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'firestore.rules'
+      - 'firebase.json'
+      - 'tests/firestore.rules.test.mjs'
+      - '.github/workflows/firestore-rules-test.yml'
+  pull_request:
+    paths:
+      - 'firestore.rules'
+      - 'firebase.json'
+      - 'tests/firestore.rules.test.mjs'
+      - '.github/workflows/firestore-rules-test.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install test dependencies
+        run: npm install --no-save firebase@12.17.1 @firebase/rules-unit-testing firebase-tools
+      - name: Run Firestore rules tests in emulator
+        run: npx firebase emulators:exec --only firestore --project life-archive-rules-test "node tests/firestore.rules.test.mjs"
