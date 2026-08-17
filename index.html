@@ -86,7 +86,7 @@ window.LifeArchiveStateBridge={
   setRefs:(refs)=>{S.refs=Array.isArray(refs)?refs:[];save()}
 };
 const toast=t=>{q('#toast').textContent=t;q('#toast').classList.add('show');setTimeout(()=>q('#toast').classList.remove('show'),1600)};
-function nav(v){qa('.view').forEach(x=>x.classList.remove('active'));q('#v-'+v)?.classList.add('active');qa('#nav button').forEach(x=>x.classList.toggle('active',x.dataset.v===v));q('#crumb').textContent=({dashboard:'從哪裡開始',triage:'初稿整理台',outline:'章節地圖',visual:'圖像化寫作',memories:'照片回憶',editor:'章節編輯器',materials:'素材庫',references:'引用與借鏡',diagnosis:'修稿檢查',compass:'全書定位',source:'原始文字',export:'備份與匯出'})[v]||'';q('#side').classList.remove('open');render();if(v==='memories')window.lifeArchiveMemories?.render?.()}
+function nav(v){qa('.view').forEach(x=>x.classList.remove('active'));q('#v-'+v)?.classList.add('active');qa('#nav button').forEach(x=>x.classList.toggle('active',x.dataset.v===v));q('#crumb').textContent=({dashboard:'今日工作台',triage:'初稿整理台',outline:'章節地圖',visual:'圖像化寫作',memories:'照片回憶',editor:'章節編輯器',materials:'素材庫',references:'引用與借鏡',diagnosis:'修稿檢查',compass:'全書定位',source:'原始文字',export:'備份與匯出'})[v]||'';q('#side').classList.remove('open');render();if(v==='memories')window.lifeArchiveMemories?.render?.()}
 window.LifeArchiveNavigate=nav;
 qa('[data-go]').forEach(b=>b.onclick=()=>nav(b.dataset.go));
 q('#menu').onclick=()=>q('#side').classList.toggle('open');
@@ -124,5 +124,6 @@ if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serv
 <script src="./references-editor.js"></script>
 <script src="./psychology-lenses.js"></script>
 <script src="./revision-editor.js"></script>
+<script src="./dashboard-workspace.js"></script>
 </body>
 </html>
