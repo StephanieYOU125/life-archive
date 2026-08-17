@@ -1,6 +1,6 @@
-const CACHE_NAME='life-archive-pwa-v23';
+const CACHE_NAME='life-archive-pwa-v24';
 const APP_SHELL=['./','./index.html','./manifest.webmanifest','./app-icon.svg','./firebase-cloud-sync.js','./mobile-auth.js','./sidebar-active.css','./book-positioning.js','./book-positioning-ui.js','./submission-materials-migration.js','./materials-editor.js','./timeline.js',
-  './timeline-cloud-sync.js','./workflow-sidebar.js','./references-editor.js','./revision-editor.js','./memories.css','./memories.js'];
+  './timeline-cloud-sync.js','./workflow-sidebar.js','./references-editor.js','./psychology-lenses.js','./revision-editor.js','./memories.css','./memories.js'];
 
 self.addEventListener('install',e=>{
   e.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(APP_SHELL)));
@@ -38,6 +38,7 @@ async function prepareResponse(response, requestUrl){
     if(!body.includes('book-positioning-ui.js')) body=body.replace('</body>','<script type="module" src="./book-positioning-ui.js"></script></body>');
     if(!body.includes('memories.js')) body=body.replace('</body>','<script src="./memories.js"></script></body>');
     if(!body.includes('references-editor.js')) body=body.replace('</body>','<script src="./references-editor.js"></script></body>');
+    if(!body.includes('psychology-lenses.js')) body=body.replace('</body>','<script src="./psychology-lenses.js"></script></body>');
     if(!body.includes('revision-editor.js')) body=body.replace('</body>','<script src="./revision-editor.js"></script></body>');
     if(!body.includes('mobile-auth.js')) body=body.replace('</body>','<script type="module" src="./mobile-auth.js"></script></body>');
   } else if(isCloudModule && (type.includes('javascript') || type.includes('text/plain') || type==='')) {
