@@ -40,14 +40,6 @@ function injectStyle(){
 
 function makeShell(){
   if(document.getElementById('v-timeline'))return;
-  const nav=document.getElementById('nav');
-  const refBtn=nav?.querySelector('[data-v="references"]');
-  let btn=nav?.querySelector('[data-v="timeline"]');
-  if(!btn){
-    btn=document.createElement('button');btn.dataset.v='timeline';btn.innerHTML='◷ 人生時間軸';
-    nav?.insertBefore(btn,refBtn||null);
-  }
-
   const section=document.createElement('section');section.className='view';section.id='v-timeline';section.innerHTML=`
     <div class="timeline-hero"><span class="eyebrow" style="color:#e6c8c1">LIFE TIMELINE × EVIDENCE</span><h1>人生時間軸</h1><p>把「發生了什麼」和「最後得到什麼」放在一起。已確認的可以拿去寫履歷或面試；待確認與有矛盾的項目則留給自己補證據。</p></div>
     <div class="timeline-stats"><div class="timeline-stat"><strong id="tlTotal">0</strong><small>全部事件</small></div><div class="timeline-stat"><strong id="tlConfirmed">0</strong><small>已確認</small></div><div class="timeline-stat"><strong id="tlPartial">0</strong><small>部分確認</small></div><div class="timeline-stat"><strong id="tlNeeds">0</strong><small>待確認／有矛盾</small></div></div>
@@ -55,15 +47,18 @@ function makeShell(){
     <div class="timeline-table-wrap"><table class="timeline-table"><thead><tr><th style="width:12%">時間</th><th style="width:16%">身分／經歷</th><th style="width:27%">履歷／面試可以怎麼用</th><th style="width:24%">成果／能力</th><th style="width:17%">確認狀態</th><th style="width:4%"></th></tr></thead><tbody id="tlBody"></tbody></table></div>`;
   const materials=document.getElementById('v-materials');materials?.insertAdjacentElement('afterend',section);
 
-  btn.addEventListener('click',()=>openTimeline(btn));
 }
 
-function openTimeline(btn){
-  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));document.getElementById('v-timeline')?.classList.add('active');
-  document.querySelectorAll('#nav button').forEach(x=>x.classList.toggle('active',x===btn));
+function openTimeline(){
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+  document.getElementById('v-timeline')?.classList.add('active');
+  document.querySelectorAll('#nav button').forEach(x=>x.classList.toggle('active',x.dataset.v==='timeline'));
   const crumb=document.getElementById('crumb');if(crumb)crumb.textContent='人生時間軸';
-  document.getElementById('side')?.classList.remove('open');render();
+  document.getElementById('side')?.classList.remove('open');
+  render();
 }
+
+window.LifeArchiveTimelineUI={open:openTimeline};
 
 function updateStats(){
   const set=(id,n)=>{const el=document.getElementById(id);if(el)el.textContent=n};

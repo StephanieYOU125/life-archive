@@ -33,31 +33,7 @@ button,input,textarea,select{font:inherit}
 <div class="shell">
 <aside class="side" id="side">
   <div class="brand"><div class="mark">書</div><div><strong>私人書稿工作室</strong><small>Life Archive</small></div></div>
-  <nav class="nav" id="nav">
-    <button class="active" data-v="dashboard">⌂ 從哪裡開始</button>
-
-    <div class="workflow-group-label">01 · 整理人生</div>
-    <button data-v="timeline">◷ 人生時間軸</button>
-    <button data-v="memories">▧ 照片回憶</button>
-    <button data-v="source">≡ 原始文字</button>
-
-    <div class="workflow-group-label">02 · 建立素材</div>
-    <button data-v="materials">◇ 素材庫</button>
-    <button data-v="triage">▦ 文字拆解台</button>
-    <button data-v="visual">✦ 故事工作台</button>
-
-    <div class="workflow-group-label">03 · 設計一本書</div>
-    <button data-v="compass">◎ 全書定位</button>
-    <button data-v="outline">☷ 章節地圖</button>
-
-    <div class="workflow-group-label">04 · 開始寫作</div>
-    <button data-v="editor">✎ 章節編輯器</button>
-    <button data-v="references">❝ 引用與借鏡</button>
-    <button data-v="diagnosis">⚑ 修稿檢查</button>
-
-    <div class="workflow-group-label">05 · 保存</div>
-    <button data-v="export">⇩ 備份與匯出</button>
-  </nav>
+  <nav class="nav" id="nav"></nav>
   <div class="note">文字儲存在目前瀏覽器；照片回憶使用 IndexedDB。私人照片不會放進 GitHub。請定期下載備份。</div>
 </aside>
 
@@ -107,7 +83,8 @@ try{S={...S,...JSON.parse(localStorage.getItem(K)||'{}')}}catch{}
 const save=()=>{localStorage.setItem(K,JSON.stringify(S));q('#saved').textContent='已自動儲存在本機';stats()};
 const toast=t=>{q('#toast').textContent=t;q('#toast').classList.add('show');setTimeout(()=>q('#toast').classList.remove('show'),1600)};
 function nav(v){qa('.view').forEach(x=>x.classList.remove('active'));q('#v-'+v)?.classList.add('active');qa('#nav button').forEach(x=>x.classList.toggle('active',x.dataset.v===v));q('#crumb').textContent=({dashboard:'從哪裡開始',triage:'初稿整理台',outline:'章節地圖',visual:'圖像化寫作',memories:'照片回憶',editor:'章節編輯器',materials:'素材庫',references:'引用與借鏡',diagnosis:'修稿檢查',compass:'全書定位',source:'原始文字',export:'備份與匯出'})[v]||'';q('#side').classList.remove('open');render();if(v==='memories')window.lifeArchiveMemories?.render?.()}
-qa('#nav button,[data-go]').forEach(b=>b.onclick=()=>nav(b.dataset.v||b.dataset.go));
+window.LifeArchiveNavigate=nav;
+qa('[data-go]').forEach(b=>b.onclick=()=>nav(b.dataset.go));
 q('#menu').onclick=()=>q('#side').classList.toggle('open');
 function stats(){q('#statChars').textContent=(S.raw||'').length.toLocaleString();q('#statChapters').textContent=S.chapters.length;q('#statMaterials').textContent=S.materials.length}
 function render(){q('#triageText').value=S.raw||'';q('#sourceText').value=S.raw||'';q('#bookTitle').value=S.title||'';q('#core').value=S.core||'';q('#reader').value=S.reader||'';q('#chapterList').innerHTML=S.chapters.map((c,i)=>`<div class="row"><div><span class="pill">第 ${i+1} 章</span> <strong>${esc(c.title)}</strong><br><small>${esc(c.question||'尚未設定核心問題')}</small></div><button class="btn" data-edit="${c.id}">寫作</button></div>`).join('')||'<div class="empty">尚無章節</div>';qa('[data-edit]').forEach(b=>b.onclick=()=>{q('#chapterSelect').value=b.dataset.edit;loadChapter();nav('editor')});q('#chapterSelect').innerHTML=S.chapters.map(c=>`<option value="${c.id}">${esc(c.title)}</option>`).join('');if(!q('#chapterSelect').value&&S.chapters[0])q('#chapterSelect').value=S.chapters[0].id;loadChapter();const stages=['靈感箱','發展中','可寫作','已放入章節'];q('#storyStage').innerHTML=stages.map(st=>`<div class="panel"><h3>${st}</h3>${S.materials.filter(m=>(m.stage||'靈感箱')===st).map(m=>`<div class="row" style="display:block;margin:8px 0"><strong>${esc(m.title)}</strong><br><small>${esc((m.content||'').slice(0,70))}</small><br><select data-stage="${m.id}" style="margin-top:8px">${stages.map(x=>`<option${x===st?' selected':''}>${x}</option>`).join('')}</select></div>`).join('')||'<small class="muted">尚無素材</small>'}</div>`).join('');qa('[data-stage]').forEach(x=>x.onchange=()=>{S.materials.find(m=>m.id===x.dataset.stage).stage=x.value;save();render()});q('#materialList').innerHTML=S.materials.map(m=>`<div class="row"><div><strong>${esc(m.title)}</strong><br><small>${esc((m.content||'').slice(0,120))}</small></div><button class="btn" data-delmat="${m.id}">刪除</button></div>`).join('')||'<div class="empty">還沒有素材。也可以從「照片回憶」開始。</div>';qa('[data-delmat]').forEach(b=>b.onclick=()=>{S.materials=S.materials.filter(m=>m.id!==b.dataset.delmat);save();render()});q('#refList').innerHTML=S.refs.map(r=>`<div class="row"><div><strong>${esc(r.name)}</strong><br><small>${esc(r.note)}</small></div><button class="btn" data-delref="${r.id}">刪除</button></div>`).join('')||'<div class="empty">尚無引用資料</div>';qa('[data-delref]').forEach(b=>b.onclick=()=>{S.refs=S.refs.filter(r=>r.id!==b.dataset.delref);save();render()});stats()}
