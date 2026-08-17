@@ -16,6 +16,7 @@ const proposalSections=[
   ['authorStrength','十、作者背景與寫作優勢',''],
   ['structure','十一、全書架構','']
 ];
+const proposalKeys=new Set(proposalSections.map(([key])=>key));
 
 function readState(){
   try{return JSON.parse(localStorage.getItem(LOCAL_KEY)||'{}')||{}}catch{return {}}
@@ -51,6 +52,17 @@ function autoGrow(textarea){
   textarea.style.height='auto';
   textarea.style.height=Math.min(Math.max(textarea.scrollHeight,110),560)+'px';
 }
+function refreshProposalEditors(){
+  const values=currentProposal();
+  document.querySelectorAll('.proposal-editor[data-proposal-key]').forEach(editor=>{
+    const key=editor.dataset.proposalKey;
+    if(proposalKeys.has(key)){
+      editor.value=values[key]||'';
+      autoGrow(editor);
+    }
+  });
+  window.dispatchEvent(new CustomEvent('life-archive:proposal-updated'));
+}
 function downloadMergedBackup(){
   const state=readState();
   state.publishingProposal={...defaults(),...(state.publishingProposal||{})};
@@ -61,6 +73,49 @@ function downloadMergedBackup(){
   a.click();
   setTimeout(()=>URL.revokeObjectURL(url),500);
 }
+function downloadProposalOnly(){
+  const payload={
+    format:'life-archive-publishing-proposal',
+    version:1,
+    exportedAt:new Date().toISOString(),
+    publishingProposal:currentProposal()
+  };
+  const url=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='life-archive-book-positioning-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),500);
+}
+function extractProposalPayload(parsed){
+  const candidate=parsed?.publishingProposal||parsed?.proposal||parsed;
+  if(!candidate||typeof candidate!=='object'||Array.isArray(candidate))throw new Error('找不到全書定位資料');
+  const result={};
+  proposalKeys.forEach(key=>{
+    if(Object.prototype.hasOwnProperty.call(candidate,key)&&typeof candidate[key]==='string')result[key]=candidate[key];
+  });
+  if(!Object.keys(result).length)throw new Error('這份 JSON 沒有可匯入的全書定位欄位');
+  return result;
+}
+async function importProposalOnly(file){
+  if(!file)throw new Error('尚未選擇檔案');
+  let parsed;
+  try{parsed=JSON.parse(await file.text())}catch{throw new Error('JSON 格式不正確')}
+  const incoming=extractProposalPayload(parsed);
+  const state=readState();
+  state.publishingProposal={...defaults(),...(state.publishingProposal||{}),...incoming};
+  localStorage.setItem(LOCAL_KEY,JSON.stringify(state));
+  refreshProposalEditors();
+  const saved=document.getElementById('saved');
+  if(saved)saved.textContent='全書定位已匯入並儲存在本機';
+  return Object.keys(incoming).length;
+}
+
+window.LifeArchiveBookPositioning={
+  importProposalOnly,
+  exportProposalOnly:downloadProposalOnly,
+  refresh:refreshProposalEditors
+};
 
 function mountBookPositioning(){
   const compass=document.getElementById('v-compass');
