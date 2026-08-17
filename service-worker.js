@@ -1,5 +1,5 @@
-const CACHE_NAME='life-archive-pwa-v14';
-const APP_SHELL=['./','./index.html','./manifest.webmanifest','./app-icon.svg','./firebase-cloud-sync.js','./mobile-auth.js','./sidebar-active.css','./book-positioning.js','./book-positioning-ui.js','./memories.css','./memories.js'];
+const CACHE_NAME='life-archive-pwa-v15';
+const APP_SHELL=['./','./index.html','./manifest.webmanifest','./app-icon.svg','./firebase-cloud-sync.js','./mobile-auth.js','./sidebar-active.css','./book-positioning.js','./book-positioning-ui.js','./submission-materials-migration.js','./memories.css','./memories.js'];
 
 self.addEventListener('install',e=>{
   e.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(APP_SHELL)));
@@ -59,7 +59,6 @@ self.addEventListener('fetch',e=>{
   const originalUrl=new URL(e.request.url);
   if(originalUrl.pathname.startsWith('/__/')) return;
 
-  // Old Photo Memories URL now belongs to the single-page workspace.
   if(originalUrl.pathname.endsWith('/app.html')){
     const homeUrl=new URL('./index.html',originalUrl);
     e.respondWith(fetch(homeUrl,{cache:'no-store'}).then(r=>prepareResponse(r,homeUrl.toString())).catch(async()=>{
