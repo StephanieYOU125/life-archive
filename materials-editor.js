@@ -16,7 +16,7 @@ let expandedId=null;
 
 function readState(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}')||{}}catch{return {}}}
 function cloneMaterials(list){return Array.isArray(list)?list.map(x=>({...x})):[]}
-function normalizeMaterial(item){return {...item,time:item.time||'',timePrecision:item.timePrecision||'待確認',tags:item.tags||'',chapterId:item.chapterId||'',stage:item.stage||'靈感箱'}}
+function normalizeMaterial(item){return {...item,time:item.time||'',timePrecision:item.timePrecision||'待確認',tags:item.tags||'',chapterId:item.chapterId||'',timelineId:item.timelineId||'',stage:item.stage||'靈感箱'}}
 function syncFromStorage(){
   const incoming=cloneMaterials(readState().materials).map(normalizeMaterial);
   if(!materialState.length){materialState=incoming;return}
@@ -56,6 +56,9 @@ function chapterOptions(value){
   const chapters=Array.isArray(readState().chapters)?readState().chapters:[];
   return `<option value="">未指定篇章</option>`+chapters.map(c=>`<option value="${esc(c.id)}"${c.id===value?' selected':''}>${esc(c.title||'未命名章節')}</option>`).join('');
 }
+function timelineItems(){try{const t=JSON.parse(localStorage.getItem('life-archive-timeline-v1')||'[]');return Array.isArray(t)?t:[]}catch{return []}}
+function timelineOptions(value){return `<option value="">未連結時間軸</option>`+timelineItems().map(t=>`<option value="${esc(t.id)}"${t.id===value?' selected':''}>${esc([t.time,t.identity].filter(Boolean).join(' · ')||'未命名事件')}</option>`).join('')}
+function timelineTitle(item){const t=timelineItems().find(x=>x.id===item.timelineId);return t?[t.time,t.identity].filter(Boolean).join(' · '):''}
 function stageOptions(value){return STAGES.map(s=>`<option${s===value?' selected':''}>${s}</option>`).join('')}
 function precisionOptions(value){return TIME_PRECISIONS.map(s=>`<option${s===value?' selected':''}>${s}</option>`).join('')}
 function chapterTitle(item){const c=(readState().chapters||[]).find(x=>x.id===item.chapterId);return c?.title||'未指定篇章'}
@@ -65,7 +68,7 @@ function filteredMaterials(){
   let rows=materialState.filter(x=>!deletedIds.has(x.id));
   if(searchTerm.trim()){
     const q=searchTerm.trim().toLowerCase();
-    rows=rows.filter(x=>[x.title,x.content,x.time,x.tags,chapterTitle(x),x.stage].join(' ').toLowerCase().includes(q));
+    rows=rows.filter(x=>[x.title,x.content,x.time,x.tags,chapterTitle(x),timelineTitle(x),x.stage].join(' ').toLowerCase().includes(q));
   }
   if(stageFilter!=='全部')rows=rows.filter(x=>x.stage===stageFilter);
   if(tagFilter!=='全部')rows=rows.filter(x=>tagsOf(x).includes(tagFilter));
@@ -111,6 +114,7 @@ function editorFields(item,always=false){
       <label class="material-field"><span>時間精度</span><select data-material-field="timePrecision">${precisionOptions(item.timePrecision)}</select></label>
       <label class="material-field"><span>寫作狀態</span><select data-material-field="stage">${stageOptions(item.stage)}</select></label>
       <label class="material-field"><span>所屬篇章</span><select data-material-field="chapterId">${chapterOptions(item.chapterId)}</select></label>
+      <label class="material-field"><span>來源時間軸</span><select data-material-field="timelineId">${timelineOptions(item.timelineId)}</select></label>
     </div>
     <label class="material-field material-title-field"><span>素材標題</span><input data-material-field="title" value="${esc(item.title||'')}" placeholder="素材標題"></label>
     <label class="material-field"><span>標籤</span><input data-material-field="tags" value="${esc(item.tags||'')}" placeholder="例：警察, SOP, 團隊, 風險"></label>
@@ -146,7 +150,7 @@ function bindRows(){
       const card=control.closest('[data-material-id]');const item=materialState.find(x=>x.id===card?.dataset.materialId);if(!item)return;
       item[control.dataset.materialField]=control.value;
       const status=card.querySelector('[data-material-save]');if(status)status.textContent='儲存中…';
-      clearTimeout(saveTimer);saveTimer=setTimeout(()=>{persist();if(status)status.textContent='✓ 已儲存';if(['tags','stage','chapterId','time'].includes(control.dataset.materialField))setTimeout(renderEditor,50)},300);
+      clearTimeout(saveTimer);saveTimer=setTimeout(()=>{persist();if(status)status.textContent='✓ 已儲存';if(['tags','stage','chapterId','timelineId','time'].includes(control.dataset.materialField))setTimeout(renderEditor,50)},300);
     };
     control.addEventListener('input',saveChange);control.addEventListener('change',saveChange);
   });

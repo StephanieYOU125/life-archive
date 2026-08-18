@@ -23,6 +23,22 @@ function esc(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt
 function scheduleSave(label){clearTimeout(saveTimer);if(label)label.textContent='儲存中…';saveTimer=setTimeout(()=>{save();if(label)label.textContent='✓ 已儲存';updateStats();},250);}
 function statusClass(s){return s==='已確認'?'ok':s==='部分確認'?'partial':s==='有矛盾'?'conflict':'pending';}
 
+function readWritingState(){try{return JSON.parse(localStorage.getItem('life-archive-writing-studio-v1')||'{}')||{}}catch{return {}}}
+function linkedMaterials(id){const s=readWritingState();return (Array.isArray(s.materials)?s.materials:[]).filter(m=>m.timelineId===id)}
+function createMaterialFromTimeline(item){
+  if(!item)return;
+  const state=readWritingState();
+  const materials=Array.isArray(state.materials)?state.materials:[];
+  const existing=materials.find(m=>m.timelineId===item.id);
+  if(existing&&!confirm(`這筆時間軸已連結「${existing.title||'未命名素材'}」。仍要再建立一筆素材嗎？`))return;
+  const title=String(item.identity||item.result||item.resume||item.time||'時間軸故事').trim();
+  const content=[item.resume,item.result,item.note].filter(Boolean).join('\n\n');
+  materials.push({id:uid(),title,content,stage:'靈感箱',time:item.time||'',timePrecision:'待確認',tags:'',chapterId:'',timelineId:item.id,source:'人生時間軸'});
+  state.materials=materials;
+  localStorage.setItem('life-archive-writing-studio-v1',JSON.stringify(state));
+  window.LifeArchiveDashboard?.render?.();
+}
+
 function parseTimelineTime(value){
   const raw=String(value||'').trim();
   if(!raw)return null;
@@ -65,7 +81,7 @@ function injectStyle(){
   .timeline-table{width:100%;border-collapse:collapse;min-width:1180px}.timeline-table th{position:sticky;top:0;background:#eee7de;text-align:left;font-size:11px;color:#665d55;padding:11px;border-bottom:1px solid var(--line);z-index:2}.timeline-table td{vertical-align:top;padding:9px;border-bottom:1px solid #eee7df}.timeline-table tr:last-child td{border-bottom:0}
   .timeline-table input,.timeline-table textarea,.timeline-table select{width:100%;border:1px solid transparent;background:transparent;border-radius:8px;padding:7px;line-height:1.55}.timeline-table textarea{resize:vertical;min-height:86px}.timeline-table input:focus,.timeline-table textarea:focus,.timeline-table select:focus{outline:2px solid rgba(123,57,69,.12);border-color:var(--accent);background:#fff}
   .timeline-status-pill{display:inline-block;border-radius:99px;padding:5px 8px;font-size:10px;font-weight:800;margin-bottom:5px}.timeline-status-pill.ok{background:#e3efe5;color:#356044}.timeline-status-pill.partial{background:#f5ecd2;color:#7a6427}.timeline-status-pill.pending{background:#ece8e3;color:#6e665f}.timeline-status-pill.conflict{background:#f5dddd;color:#8a4141}
-  .timeline-row-actions{display:flex;justify-content:flex-end}.timeline-delete{border:0;background:transparent;color:#9c4545;cursor:pointer;padding:6px}.timeline-empty{padding:30px;text-align:center;color:var(--muted)}
+  .timeline-row-actions{display:grid;gap:5px;justify-items:end}.timeline-story{border:1px solid #ded5c9;background:#fffdf9;color:#7b3945;border-radius:8px;padding:6px 8px;font-size:10px;white-space:nowrap;cursor:pointer}.timeline-link-count{font-size:9px;color:#817970;white-space:nowrap}.timeline-delete{border:0;background:transparent;color:#9c4545;cursor:pointer;padding:6px}.timeline-empty{padding:30px;text-align:center;color:var(--muted)}
   .timeline-save{font-size:11px;color:var(--muted);white-space:nowrap}.timeline-sort-note{font-size:10px;color:var(--muted);flex-basis:100%;margin-top:-3px}
   @media(max-width:850px){#v-timeline{padding-left:12px;padding-right:12px}.timeline-stats{grid-template-columns:1fr 1fr}.timeline-hero{padding:20px}.timeline-hero h1{font-size:28px}.timeline-sort{min-width:0}.timeline-table-wrap{border:0;background:transparent;overflow:visible}.timeline-table{min-width:0;display:block}.timeline-table thead{display:none}.timeline-table tbody{display:grid;gap:12px}.timeline-table tr{display:block;background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:12px}.timeline-table td{display:grid;grid-template-columns:88px 1fr;gap:8px;border:0;padding:5px}.timeline-table td:before{content:attr(data-label);font-size:11px;color:var(--muted);font-weight:700;padding-top:8px}.timeline-table textarea{min-height:95px}.timeline-row-actions{justify-content:flex-start}}
   `;document.head.appendChild(s);
@@ -111,7 +127,7 @@ function render(){
     <td data-label="履歷／面試"><textarea data-f="resume">${esc(x.resume)}</textarea></td>
     <td data-label="成果／能力"><textarea data-f="result">${esc(x.result)}</textarea></td>
     <td data-label="確認狀態"><span class="timeline-status-pill ${statusClass(x.status)}">${esc(x.status)}</span><select data-f="status">${TIMELINE_STATUSES.map(s=>`<option${s===x.status?' selected':''}>${s}</option>`).join('')}</select><textarea data-f="note" placeholder="待補資料／矛盾說明">${esc(x.note)}</textarea></td>
-    <td data-label=""><div class="timeline-row-actions"><button class="timeline-delete" data-del title="刪除">✕</button></div></td></tr>`).join(''):'<tr><td colspan="6"><div class="timeline-empty">沒有符合條件的事件。</div></td></tr>';
+    <td data-label="故事"><div class="timeline-row-actions"><button class="timeline-story" data-story type="button">＋ 故事素材</button>${linkedMaterials(x.id).length?`<span class="timeline-link-count">已連結 ${linkedMaterials(x.id).length} 筆</span>`:''}<button class="timeline-delete" data-del title="刪除">✕</button></div></td></tr>`).join(''):'<tr><td colspan="6"><div class="timeline-empty">沒有符合條件的事件。</div></td></tr>';
   body.querySelectorAll('[data-f]').forEach(el=>{
     const commit=(shouldRender=false)=>{
       const row=el.closest('tr');const item=timeline.find(x=>x.id===row?.dataset.id);if(!item)return;
@@ -123,6 +139,7 @@ function render(){
     el.addEventListener('input',()=>commit(false));
     el.addEventListener('change',()=>commit(true));
   });
+  body.querySelectorAll('[data-story]').forEach(b=>b.onclick=()=>{const id=b.closest('tr')?.dataset.id;const item=timeline.find(x=>x.id===id);createMaterialFromTimeline(item);render();});
   body.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{const id=b.closest('tr')?.dataset.id;if(id&&confirm('刪除這筆時間軸事件？')){timeline=timeline.filter(x=>x.id!==id);save();render();updateStats();}});
   updateStats();
 }
