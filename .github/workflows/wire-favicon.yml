@@ -1,0 +1,39 @@
+name: Wire Browser Favicon
+on:
+  push:
+    paths:
+      - '.github/workflows/wire-favicon.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update favicon wiring
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+          s=s.replace('<link rel="icon" href="app-icon.svg">','<link rel="icon" type="image/svg+xml" href="./favicon.svg">\n<link rel="alternate icon" href="./favicon.svg">')
+          p.write_text(s)
+          p=Path('service-worker.js')
+          s=p.read_text().replace("life-archive-pwa-v34","life-archive-pwa-v35")
+          if "'./favicon.svg'" not in s:
+              s=s.replace("'./app-icon.svg'","'./app-icon.svg','./favicon.svg'")
+          p.write_text(s)
+          PY
+      - name: Validate
+        run: |
+          grep -q 'favicon.svg' index.html
+          grep -q 'favicon.svg' service-worker.js
+          grep -q 'life-archive-pwa-v35' service-worker.js
+      - name: Commit and self-delete
+        run: |
+          rm .github/workflows/wire-favicon.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html service-worker.js .github/workflows/wire-favicon.yml
+          git commit -m "fix: show Life Archive favicon in browser tabs"
+          git push
