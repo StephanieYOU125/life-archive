@@ -1,3 +1,5 @@
+import './cloud-state-bridge.js';
+
 const WRITING_KEY='life-archive-writing-studio-v1';
 const CLOUD_FLAG='life-archive-cloud-enabled';
 const TIMELINE_KEY='life-archive-timeline-v1';
