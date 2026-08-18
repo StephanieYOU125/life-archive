@@ -1,0 +1,73 @@
+name: Link Life Archive Data
+on:
+  push:
+    paths:
+      - '.github/workflows/link-life-data.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch relationship fields and UI
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p=Path('materials-editor.js')
+          s=p.read_text()
+          s=s.replace("function normalizeMaterial(item){return {...item,time:item.time||'',timePrecision:item.timePrecision||'待確認',tags:item.tags||'',chapterId:item.chapterId||'',stage:item.stage||'靈感箱'}}",
+                    "function normalizeMaterial(item){return {...item,time:item.time||'',timePrecision:item.timePrecision||'待確認',tags:item.tags||'',chapterId:item.chapterId||'',timelineId:item.timelineId||'',stage:item.stage||'靈感箱'}}")
+          anchor="function chapterOptions(value){\n  const chapters=Array.isArray(readState().chapters)?readState().chapters:[];\n  return `<option value=\"\">未指定篇章</option>`+chapters.map(c=>`<option value=\"${esc(c.id)}\"${c.id===value?' selected':''}>${esc(c.title||'未命名章節')}</option>`).join('');\n}\n"
+          insert=anchor+"function timelineItems(){try{const t=JSON.parse(localStorage.getItem('life-archive-timeline-v1')||'[]');return Array.isArray(t)?t:[]}catch{return []}}\nfunction timelineOptions(value){return `<option value=\"\">未連結時間軸</option>`+timelineItems().map(t=>`<option value=\"${esc(t.id)}\"${t.id===value?' selected':''}>${esc([t.time,t.identity].filter(Boolean).join(' · ')||'未命名事件')}</option>`).join('')}\nfunction timelineTitle(item){const t=timelineItems().find(x=>x.id===item.timelineId);return t?[t.time,t.identity].filter(Boolean).join(' · '):''}\n"
+          if 'function timelineOptions(value)' not in s:
+              s=s.replace(anchor,insert)
+          s=s.replace("rows=rows.filter(x=>[x.title,x.content,x.time,x.tags,chapterTitle(x),x.stage].join(' ').toLowerCase().includes(q));",
+                    "rows=rows.filter(x=>[x.title,x.content,x.time,x.tags,chapterTitle(x),timelineTitle(x),x.stage].join(' ').toLowerCase().includes(q));")
+          old="      <label class=\"material-field\"><span>所屬篇章</span><select data-material-field=\"chapterId\">${chapterOptions(item.chapterId)}</select></label>\n    </div>"
+          new="      <label class=\"material-field\"><span>所屬篇章</span><select data-material-field=\"chapterId\">${chapterOptions(item.chapterId)}</select></label>\n      <label class=\"material-field\"><span>來源時間軸</span><select data-material-field=\"timelineId\">${timelineOptions(item.timelineId)}</select></label>\n    </div>"
+          if 'data-material-field="timelineId"' not in s:
+              s=s.replace(old,new)
+          s=s.replace("if(['tags','stage','chapterId','time'].includes(control.dataset.materialField))setTimeout(renderEditor,50)",
+                    "if(['tags','stage','chapterId','timelineId','time'].includes(control.dataset.materialField))setTimeout(renderEditor,50)")
+          p.write_text(s)
+
+          p=Path('timeline.js')
+          s=p.read_text()
+          marker="function statusClass(s){return s==='已確認'?'ok':s==='部分確認'?'partial':s==='有矛盾'?'conflict':'pending';}\n"
+          add=marker+'''\nfunction readWritingState(){try{return JSON.parse(localStorage.getItem('life-archive-writing-studio-v1')||'{}')||{}}catch{return {}}}\nfunction linkedMaterials(id){const s=readWritingState();return (Array.isArray(s.materials)?s.materials:[]).filter(m=>m.timelineId===id)}\nfunction createMaterialFromTimeline(item){\n  if(!item)return;\n  const state=readWritingState();\n  const materials=Array.isArray(state.materials)?state.materials:[];\n  const existing=materials.find(m=>m.timelineId===item.id);\n  if(existing&&!confirm(`這筆時間軸已連結「${existing.title||'未命名素材'}」。仍要再建立一筆素材嗎？`))return;\n  const title=String(item.identity||item.result||item.resume||item.time||'時間軸故事').trim();\n  const content=[item.resume,item.result,item.note].filter(Boolean).join('\\n\\n');\n  materials.push({id:uid(),title,content,stage:'靈感箱',time:item.time||'',timePrecision:'待確認',tags:'',chapterId:'',timelineId:item.id,source:'人生時間軸'});\n  state.materials=materials;\n  localStorage.setItem('life-archive-writing-studio-v1',JSON.stringify(state));\n  window.LifeArchiveDashboard?.render?.();\n}\n'''
+          if 'function createMaterialFromTimeline(item)' not in s:
+              s=s.replace(marker,add)
+          s=s.replace(".timeline-row-actions{display:flex;justify-content:flex-end}.timeline-delete",
+                    ".timeline-row-actions{display:grid;gap:5px;justify-items:end}.timeline-story{border:1px solid #ded5c9;background:#fffdf9;color:#7b3945;border-radius:8px;padding:6px 8px;font-size:10px;white-space:nowrap;cursor:pointer}.timeline-link-count{font-size:9px;color:#817970;white-space:nowrap}.timeline-delete")
+          old="    <td data-label=\"\"><div class=\"timeline-row-actions\"><button class=\"timeline-delete\" data-del title=\"刪除\">✕</button></div></td></tr>`).join('')"
+          new="    <td data-label=\"故事\"><div class=\"timeline-row-actions\"><button class=\"timeline-story\" data-story type=\"button\">＋ 故事素材</button>${linkedMaterials(x.id).length?`<span class=\"timeline-link-count\">已連結 ${linkedMaterials(x.id).length} 筆</span>`:''}<button class=\"timeline-delete\" data-del title=\"刪除\">✕</button></div></td></tr>`).join('')"
+          if 'data-story' not in s:
+              s=s.replace(old,new)
+          bind="  body.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{const id=b.closest('tr')?.dataset.id;if(id&&confirm('刪除這筆時間軸事件？')){timeline=timeline.filter(x=>x.id!==id);save();render();updateStats();}});"
+          repl="  body.querySelectorAll('[data-story]').forEach(b=>b.onclick=()=>{const id=b.closest('tr')?.dataset.id;const item=timeline.find(x=>x.id===id);createMaterialFromTimeline(item);render();});\n"+bind
+          if "querySelectorAll('[data-story]')" not in s:
+              s=s.replace(bind,repl)
+          p.write_text(s)
+
+          p=Path('service-worker.js')
+          s=p.read_text().replace("life-archive-pwa-v33","life-archive-pwa-v34")
+          p.write_text(s)
+          PY
+      - name: Validate JavaScript
+        run: |
+          node --check timeline.js
+          node --check materials-editor.js
+          node --check service-worker.js
+          grep -q "timelineId" materials-editor.js
+          grep -q "data-story" timeline.js
+          grep -q "life-archive-pwa-v34" service-worker.js
+      - name: Commit changes and remove one-time workflow
+        run: |
+          rm .github/workflows/link-life-data.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add timeline.js materials-editor.js service-worker.js .github/workflows/link-life-data.yml
+          git commit -m "feat: link timeline events to story materials and chapters"
+          git push
