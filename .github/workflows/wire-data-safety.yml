@@ -1,0 +1,59 @@
+name: Wire data safety center
+
+on:
+  push:
+    paths:
+      - '.github/workflows/wire-data-safety.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  wire:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Wire module and PWA cache
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          index = Path('index.html')
+          text = index.read_text(encoding='utf-8')
+          tag = '<script type="module" src="./data-safety-center.js"></script>'
+          if tag not in text:
+              anchor = '<script type="module" src="./firebase-cloud-sync.js"></script>'
+              if anchor in text:
+                  text = text.replace(anchor, tag + '\n' + anchor, 1)
+              else:
+                  text = text.replace('</body>', tag + '\n</body>', 1)
+              index.write_text(text, encoding='utf-8')
+
+          sw = Path('service-worker.js')
+          s = sw.read_text(encoding='utf-8')
+          s = s.replace("const CACHE_NAME='life-archive-pwa-v32'", "const CACHE_NAME='life-archive-pwa-v33'")
+          s = s.replace("const CACHE_NAME='life-archive-pwa-v31'", "const CACHE_NAME='life-archive-pwa-v33'")
+          if "'./data-safety-center.js'" not in s:
+              s = s.replace("'./chapter-editor-plus.js'", "'./chapter-editor-plus.js','./data-safety-center.js','./cloud-state-bridge.js'")
+          injection = "    if(!body.includes('data-safety-center.js')) body=body.replace('</body>','<script type=\"module\" src=\"./data-safety-center.js\"></script></body>');\n"
+          if "body.includes('data-safety-center.js')" not in s:
+              marker = "    if(!body.includes('mobile-auth.js')) body=body.replace('</body>','<script type=\"module\" src=\"./mobile-auth.js\"></script></body>');\n"
+              if marker in s:
+                  s = s.replace(marker, marker + injection)
+          sw.write_text(s, encoding='utf-8')
+          PY
+
+          node --check data-safety-center.js
+          node --check cloud-state-bridge.js
+          node --check service-worker.js
+          grep -q 'data-safety-center.js' index.html
+          grep -q "life-archive-pwa-v33" service-worker.js
+      - name: Remove one-time workflow and commit
+        run: |
+          rm -f .github/workflows/wire-data-safety.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html service-worker.js .github/workflows/wire-data-safety.yml
+          git diff --cached --quiet && exit 0
+          git commit -m "feat: wire data safety center into app"
+          git push
