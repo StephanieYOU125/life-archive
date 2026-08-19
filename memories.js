@@ -126,12 +126,13 @@
   }
 
   function esc(value){
-    return String(value||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    return String(value||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
   }
 
   function stages(value){
-    return ['童年','國中','高中','警大','警察工作','研究所','旅行','海外生活','運動／挑戰','其他']
-      .map(x=>`<option${x===value?' selected':''}>${x}</option>`).join('');
+    const options=['國小','國中','高中','大學','研究所','工作','旅行','交換','運動','娛樂','挑戰','其他'];
+    if(value && !options.includes(value)) options.push(value);
+    return options.map(x=>`<option${x===value?' selected':''}>${x}</option>`).join('');
   }
 
   function photoHtml(item){
@@ -151,7 +152,7 @@
             <input class="mem-title" data-memory-field="title" value="${esc(item.title)}" placeholder="替這段回憶取名字">
             <div class="mem-row">
               <label>時間<input data-memory-field="when" value="${esc(item.when)}" placeholder="例如：2015 夏天"></label>
-              <label>人生階段<select data-memory-field="stage">${stages(item.stage||'其他')}</select></label>
+              <label>經歷分類<select data-memory-field="stage">${stages(item.stage||'其他')}</select></label>
             </div>
             <div class="mem-row">
               <label>地點<input data-memory-field="place" value="${esc(item.place)}"></label>
