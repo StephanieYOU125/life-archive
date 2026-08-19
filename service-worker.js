@@ -1,5 +1,5 @@
-const CACHE_NAME='life-archive-pwa-v45';
-const APP_SHELL=['./','./index.html','./manifest.webmanifest','./app-icon.svg','./favicon.svg','./firebase-cloud-sync.js','./mobile-auth.js','./sidebar-active.css','./book-positioning.js','./book-positioning-ui.js','./submission-materials-migration.js','./materials-editor.js','./materials-search-fix.js','./timeline.js',
+const CACHE_NAME='life-archive-pwa-v46';
+const APP_SHELL=['./','./index.html','./manifest.webmanifest','./app-icon.svg','./favicon.svg','./firebase-cloud-sync.js','./mobile-auth.js','./sidebar-active.css','./book-positioning.js','./book-positioning-ui.js','./submission-materials-migration.js','./materials-editor.js','./materials-search-fix.js','./pilot-traits-tags.js','./timeline.js',
   './timeline-cloud-sync.js','./workflow-sidebar.js','./dashboard-workspace.js','./chapter-editor-plus.js','./story-extractor.js','./data-safety-center.js','./cloud-state-bridge.js','./references-editor.js','./psychology-lenses.js','./revision-editor.js','./memories.css','./memories.js'];
 
 self.addEventListener('install',e=>{
@@ -36,6 +36,7 @@ async function prepareResponse(response, requestUrl){
     if(!body.includes('dashboard-workspace.js')) body=body.replace('</body>','<script src="./dashboard-workspace.js"></script></body>');
     if(!body.includes('chapter-editor-plus.js')) body=body.replace('</body>','<script src="./chapter-editor-plus.js"></script></body>');
     if(!body.includes('materials-search-fix.js')) body=body.replace('</body>','<script src="./materials-search-fix.js"></script></body>');
+    if(!body.includes('pilot-traits-tags.js')) body=body.replace('</body>','<script src="./pilot-traits-tags.js"></script></body>');
     if(!body.includes('firebase-cloud-sync.js')) body=body.replace('</body>','<script type="module" src="./firebase-cloud-sync.js"></script></body>');
     if(!body.includes('book-positioning.js')) body=body.replace('</body>','<script type="module" src="./book-positioning.js"></script></body>');
     if(!body.includes('book-positioning-ui.js')) body=body.replace('</body>','<script type="module" src="./book-positioning-ui.js"></script></body>');
