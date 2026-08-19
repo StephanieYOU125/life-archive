@@ -1,0 +1,56 @@
+name: Fix Material Add Editing
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-material-add-edit.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch materials add flow
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('materials-editor.js')
+          s=p.read_text()
+          old="  const addButton=document.getElementById('addMaterial');addButton?.addEventListener('click',()=>setTimeout(()=>{syncFromStorage();const newest=materialState[materialState.length-1];if(newest)expandedId=newest.id;renderEditor()},60));"
+          new="""  const addButton=document.getElementById('addMaterial');
+  if(addButton){
+    addButton.onclick=null;
+    addButton.addEventListener('click',()=>{
+      const id=(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2,7));
+      const item=normalizeMaterial({id,title:'',content:'',stage:'靈感箱',time:'',timePrecision:'待確認',tags:'',chapterId:'',timelineId:'',source:'手動新增'});
+      materialState.push(item);
+      searchTerm='';stageFilter='全部';tagFilter='全部';expandedId=id;
+      persist();renderEditor();
+      requestAnimationFrame(()=>{
+        const card=document.querySelector(`[data-material-id=\"${id}\"]`);
+        card?.scrollIntoView({behavior:'smooth',block:'center'});
+        card?.querySelector('[data-material-field=\"title\"]')?.focus();
+      });
+    });
+  }"""
+          if old not in s:
+              raise SystemExit('target addMaterial handler not found')
+          p.write_text(s.replace(old,new))
+
+          p=Path('service-worker.js')
+          s=p.read_text().replace("life-archive-pwa-v36","life-archive-pwa-v37",1)
+          p.write_text(s)
+          PY
+      - name: Validate
+        run: |
+          node --check materials-editor.js
+          grep -q "addButton.onclick=null" materials-editor.js
+          grep -q "life-archive-pwa-v37" service-worker.js
+      - name: Commit and self-delete
+        run: |
+          rm .github/workflows/fix-material-add-edit.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add materials-editor.js service-worker.js .github/workflows/fix-material-add-edit.yml
+          git commit -m "fix: open new materials directly in editor"
+          git push
