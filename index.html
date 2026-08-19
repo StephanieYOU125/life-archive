@@ -83,41 +83,30 @@ const K='life-archive-writing-studio-v1',q=s=>document.querySelector(s),qa=s=>[.
 let S={title:'30歲前，我還沒有答案',core:'',reader:'',raw:'',chapters:[{id:uid(),title:'第一章',question:'這一章真正想回答什麼？',draft:''}],materials:[],refs:[]};
 try{S={...S,...JSON.parse(localStorage.getItem(K)||'{}')}}catch{}
 const save=()=>{localStorage.setItem(K,JSON.stringify(S));q('#saved').textContent='已自動儲存在本機';stats()};
-window.LifeArchiveStateBridge={
-  get:()=>S,
-  setRefs:(refs)=>{S.refs=Array.isArray(refs)?refs:[];save()}
-};
+window.LifeArchiveStateBridge={get:()=>S,setRefs:(refs)=>{S.refs=Array.isArray(refs)?refs:[];save()}};
 const toast=t=>{q('#toast').textContent=t;q('#toast').classList.add('show');setTimeout(()=>q('#toast').classList.remove('show'),1600)};
 function nav(v){qa('.view').forEach(x=>x.classList.remove('active'));q('#v-'+v)?.classList.add('active');qa('#nav button').forEach(x=>x.classList.toggle('active',x.dataset.v===v));q('#crumb').textContent=({dashboard:'今日工作台',triage:'初稿整理台',outline:'章節地圖',visual:'圖像化寫作',memories:'照片回憶',editor:'章節編輯器',materials:'素材庫',references:'引用與借鏡',diagnosis:'修稿檢查',compass:'全書定位',source:'原始文字',export:'備份與匯出'})[v]||'';q('#side').classList.remove('open');render();if(v==='memories')window.lifeArchiveMemories?.render?.()}
 window.LifeArchiveNavigate=nav;
-qa('[data-go]').forEach(b=>b.onclick=()=>nav(b.dataset.go));
-q('#menu').onclick=()=>q('#side').classList.toggle('open');
+qa('[data-go]').forEach(b=>b.onclick=()=>nav(b.dataset.go));q('#menu').onclick=()=>q('#side').classList.toggle('open');
 function stats(){q('#statChars').textContent=(S.raw||'').length.toLocaleString();q('#statChapters').textContent=S.chapters.length;q('#statMaterials').textContent=S.materials.length}
 function render(){q('#triageText').value=S.raw||'';q('#sourceText').value=S.raw||'';q('#bookTitle').value=S.title||'';q('#core').value=S.core||'';q('#reader').value=S.reader||'';q('#chapterList').innerHTML=S.chapters.map((c,i)=>`<div class="row"><div><span class="pill">第 ${i+1} 章</span> <strong>${esc(c.title)}</strong><br><small>${esc(c.question||'尚未設定核心問題')}</small></div><button class="btn" data-edit="${c.id}">寫作</button></div>`).join('')||'<div class="empty">尚無章節</div>';qa('[data-edit]').forEach(b=>b.onclick=()=>{q('#chapterSelect').value=b.dataset.edit;loadChapter();nav('editor')});q('#chapterSelect').innerHTML=S.chapters.map(c=>`<option value="${c.id}">${esc(c.title)}</option>`).join('');if(!q('#chapterSelect').value&&S.chapters[0])q('#chapterSelect').value=S.chapters[0].id;loadChapter();const stages=['靈感箱','發展中','可寫作','已放入章節'];q('#storyStage').innerHTML=stages.map(st=>`<div class="panel"><h3>${st}</h3>${S.materials.filter(m=>(m.stage||'靈感箱')===st).map(m=>`<div class="row" style="display:block;margin:8px 0"><strong>${esc(m.title)}</strong><br><small>${esc((m.content||'').slice(0,70))}</small><br><select data-stage="${m.id}" style="margin-top:8px">${stages.map(x=>`<option${x===st?' selected':''}>${x}</option>`).join('')}</select></div>`).join('')||'<small class="muted">尚無素材</small>'}</div>`).join('');qa('[data-stage]').forEach(x=>x.onchange=()=>{S.materials.find(m=>m.id===x.dataset.stage).stage=x.value;save();render()});q('#materialList').innerHTML=S.materials.map(m=>`<div class="row"><div><strong>${esc(m.title)}</strong><br><small>${esc((m.content||'').slice(0,120))}</small></div><button class="btn" data-delmat="${m.id}">刪除</button></div>`).join('')||'<div class="empty">還沒有素材。也可以從「照片回憶」開始。</div>';qa('[data-delmat]').forEach(b=>b.onclick=()=>{S.materials=S.materials.filter(m=>m.id!==b.dataset.delmat);save();render()});window.LifeArchiveReferencesEditor?.render?.();stats()}
 function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function loadChapter(){let c=S.chapters.find(x=>x.id===q('#chapterSelect').value)||S.chapters[0];if(!c)return;q('#chapterTitle').value=c.title;q('#chapterQuestion').value=c.question||'';q('#chapterDraft').value=c.draft||''}
-q('#chapterSelect').onchange=loadChapter;
-['chapterTitle','chapterQuestion','chapterDraft'].forEach(id=>q('#'+id).oninput=()=>{let c=S.chapters.find(x=>x.id===q('#chapterSelect').value);if(c){c[id==='chapterTitle'?'title':id==='chapterQuestion'?'question':'draft']=q('#'+id).value;save()}});
-q('#triageSave').onclick=()=>{S.raw=q('#triageText').value;save();toast('初稿已儲存')};
-q('#triageMaterial').onclick=()=>{let t=q('#triageText').value.trim();if(!t)return toast('先貼上文字');S.materials.push({id:uid(),title:'從初稿建立的素材',content:t,stage:'靈感箱'});save();toast('已加入素材庫')};
-q('#sourceText').oninput=()=>{S.raw=q('#sourceText').value;save()};
+q('#chapterSelect').onchange=loadChapter;['chapterTitle','chapterQuestion','chapterDraft'].forEach(id=>q('#'+id).oninput=()=>{let c=S.chapters.find(x=>x.id===q('#chapterSelect').value);if(c){c[id==='chapterTitle'?'title':id==='chapterQuestion'?'question':'draft']=q('#'+id).value;save()}});
+q('#triageSave').onclick=()=>{S.raw=q('#triageText').value;save();toast('初稿已儲存')};q('#triageMaterial').onclick=()=>{let t=q('#triageText').value.trim();if(!t)return toast('先貼上文字');S.materials.push({id:uid(),title:'從初稿建立的素材',content:t,stage:'靈感箱'});save();toast('已加入素材庫')};q('#sourceText').oninput=()=>{S.raw=q('#sourceText').value;save()};
 q('#addChapter').onclick=()=>{let t=prompt('章名？');if(t){S.chapters.push({id:uid(),title:t,question:'',draft:''});save();render()}};
-q('#addMaterial').onclick=()=>{let t=prompt('素材標題？');if(!t)return;let c=prompt('事件摘要／想到什麼？')||'';S.materials.push({id:uid(),title:t,content:c,stage:'靈感箱'});save();render()};
-// #addRef is handled by references-editor.js
+// 新增素材由 materials-search-fix.js 接手，直接建立可編輯空白素材，不使用 prompt。
+q('#addMaterial').onclick=()=>{};
 ['bookTitle','core','reader'].forEach(id=>q('#'+id).oninput=()=>{S[id==='bookTitle'?'title':id]=q('#'+id).value;save()});
-// 修稿檢查由 revision-editor.js 負責
 function backup(){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(S,null,2)],{type:'application/json'}));a.download='life-archive-writing-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)}
-q('#backupTop').onclick=backup;q('#exportJson').onclick=backup;
-q('#importJson').onchange=async e=>{try{let x=JSON.parse(await e.target.files[0].text());if(!x.chapters)throw 0;if(confirm('匯入會取代目前文字工作室資料，確定？')){S=x;save();render();toast('已匯入')}}catch{alert('備份格式不正確')}};
-q('#exportTxt').onclick=()=>{let txt=S.chapters.map((c,i)=>`第 ${i+1} 章 ${c.title}\n\n${c.draft||''}`).join('\n\n');let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type:'text/plain'}));a.download=(S.title||'書稿')+'.txt';a.click()};
-render();
-if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js').catch(console.warn));
+q('#backupTop').onclick=backup;q('#exportJson').onclick=backup;q('#importJson').onchange=async e=>{try{let x=JSON.parse(await e.target.files[0].text());if(!x.chapters)throw 0;if(confirm('匯入會取代目前文字工作室資料，確定？')){S=x;save();render();toast('已匯入')}}catch{alert('備份格式不正確')}};q('#exportTxt').onclick=()=>{let txt=S.chapters.map((c,i)=>`第 ${i+1} 章 ${c.title}\n\n${c.draft||''}`).join('\n\n');let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type:'text/plain'}));a.download=(S.title||'書稿')+'.txt';a.click()};render();if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js').catch(console.warn));
 })();
 </script>
+<script src="./materials-editor.js"></script>
+<script src="./materials-search-fix.js"></script>
 <script src="memories.js"></script>
 <script type="module" src="book-positioning.js"></script>
 <script type="module" src="book-positioning-ui.js"></script>
-
 <script src="./memories.js"></script>
 <script type="module" src="./book-positioning.js"></script>
 <script type="module" src="./book-positioning-ui.js"></script>
