@@ -1,0 +1,161 @@
+name: Align Memory and Material Fields
+on:
+  push:
+    paths:
+      - '.github/workflows/align-memory-material-fields.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Align fields and link memories
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          # --- materials-editor.js ---
+          p=Path('materials-editor.js')
+          s=p.read_text()
+
+          s=s.replace("const TIME_PRECISIONS=['精確日期','年月','年份','約略時間','待確認'];",
+                      "const TIME_PRECISIONS=['精確日期','年月','年份','約略時間','待確認'];\nconst EXPERIENCE_CATEGORIES=['國小','國中','高中','大學','研究所','工作','旅行','交換','運動','娛樂','挑戰','其他'];")
+
+          old="function normalizeMaterial(item){return {...item,time:item.time||'',timePrecision:item.timePrecision||'待確認',tags:item.tags||'',chapterId:item.chapterId||'',timelineId:item.timelineId||'',stage:item.stage||'靈感箱'}}"
+          new="function normalizeMaterial(item){return {...item,time:item.time||'',timePrecision:item.timePrecision||'待確認',experienceCategory:item.experienceCategory||'其他',place:item.place||'',feeling:item.feeling||'',tags:item.tags||'',chapterId:item.chapterId||'',timelineId:item.timelineId||'',memoryId:item.memoryId||'',materialType:item.materialType||'事件素材',stage:item.stage||'靈感箱'}}"
+          if old not in s: raise SystemExit('normalizeMaterial target not found')
+          s=s.replace(old,new,1)
+
+          anchor="function precisionOptions(value){return TIME_PRECISIONS.map(s=>`<option${s===value?' selected':''}>${s}</option>`).join('')}"
+          insert=anchor+"\nfunction categoryOptions(value){const options=[...EXPERIENCE_CATEGORIES];if(value&&!options.includes(value))options.push(value);return options.map(s=>`<option${s===value?' selected':''}>${s}</option>`).join('')}"
+          if anchor not in s: raise SystemExit('precisionOptions anchor not found')
+          s=s.replace(anchor,insert,1)
+
+          s=s.replace("[x.title,x.content,x.time,x.tags,chapterTitle(x),timelineTitle(x),x.stage]",
+                      "[x.title,x.content,x.time,x.experienceCategory,x.place,x.feeling,x.tags,chapterTitle(x),timelineTitle(x),x.stage]")
+
+          old_grid="""      <label class=\"material-field\"><span>時間</span><input data-material-field=\"time\" value=\"${esc(item.time)}\" placeholder=\"例：2018/08/03、2023–2026、約2016寒假\"></label>
+      <label class=\"material-field\"><span>時間精度</span><select data-material-field=\"timePrecision\">${precisionOptions(item.timePrecision)}</select></label>
+      <label class=\"material-field\"><span>寫作狀態</span><select data-material-field=\"stage\">${stageOptions(item.stage)}</select></label>
+      <label class=\"material-field\"><span>所屬篇章</span><select data-material-field=\"chapterId\">${chapterOptions(item.chapterId)}</select></label>
+      <label class=\"material-field\"><span>來源時間軸</span><select data-material-field=\"timelineId\">${timelineOptions(item.timelineId)}</select></label>
+"""
+          new_grid="""      <label class=\"material-field\"><span>時間</span><input data-material-field=\"time\" value=\"${esc(item.time)}\" placeholder=\"例：2018/08/03、2023–2026、約2016寒假\"></label>
+      <label class=\"material-field\"><span>時間精度</span><select data-material-field=\"timePrecision\">${precisionOptions(item.timePrecision)}</select></label>
+      <label class=\"material-field\"><span>經歷分類</span><select data-material-field=\"experienceCategory\">${categoryOptions(item.experienceCategory)}</select></label>
+      <label class=\"material-field\"><span>地點</span><input data-material-field=\"place\" value=\"${esc(item.place)}\" placeholder=\"例如：東京、臺北、學校\"></label>
+      <label class=\"material-field\"><span>感受</span><input data-material-field=\"feeling\" value=\"${esc(item.feeling)}\" placeholder=\"例如：期待、害怕、安心\"></label>
+      <label class=\"material-field\"><span>寫作狀態</span><select data-material-field=\"stage\">${stageOptions(item.stage)}</select></label>
+      <label class=\"material-field\"><span>所屬篇章</span><select data-material-field=\"chapterId\">${chapterOptions(item.chapterId)}</select></label>
+      <label class=\"material-field\"><span>來源時間軸</span><select data-material-field=\"timelineId\">${timelineOptions(item.timelineId)}</select></label>
+"""
+          if old_grid not in s: raise SystemExit('material grid target not found')
+          s=s.replace(old_grid,new_grid,1)
+
+          s=s.replace("if(['tags','stage','chapterId','timelineId','time'].includes(control.dataset.materialField))",
+                      "if(['tags','stage','chapterId','timelineId','time','experienceCategory','place','feeling'].includes(control.dataset.materialField))")
+
+          p.write_text(s)
+
+          # --- memories.js ---
+          p=Path('memories.js')
+          s=p.read_text()
+          stage_anchor="""  function stages(value){
+    const options=['國小','國中','高中','大學','研究所','工作','旅行','交換','運動','娛樂','挑戰','其他'];
+    if(value && !options.includes(value)) options.push(value);
+    return options.map(x=>`<option${x===value?' selected':''}>${x}</option>`).join('');
+  }
+"""
+          helper=stage_anchor+"""
+
+  function readWritingState(){
+    try{return JSON.parse(localStorage.getItem('life-archive-writing-studio-v1')||'{}')||{}}catch{return {}}
+  }
+
+  function linkedMaterials(memoryId){
+    const state=readWritingState();
+    return (Array.isArray(state.materials)?state.materials:[]).filter(m=>m.memoryId===memoryId);
+  }
+
+  function createMaterialFromMemory(item){
+    if(!item) return;
+    const state=readWritingState();
+    const materials=Array.isArray(state.materials)?state.materials:[];
+    const existing=materials.find(m=>m.memoryId===item.id);
+    if(existing && !confirm(`這筆照片回憶已建立素材「${existing.title||'未命名素材'}」。仍要再建立一筆嗎？`)) return;
+    materials.push({
+      id:uid(),
+      title:String(item.title||item.story||item.when||'照片回憶').trim().slice(0,80),
+      content:item.story||'',
+      materialType:'事件素材',
+      stage:'靈感箱',
+      time:item.when||'',
+      timePrecision:'待確認',
+      experienceCategory:item.stage||'其他',
+      place:item.place||'',
+      feeling:item.feeling||'',
+      tags:item.tags||'',
+      chapterId:String(item.chapterIds||'').split(/[,，\\s]+/).filter(Boolean)[0]||'',
+      timelineId:'',
+      memoryId:item.id,
+      source:'照片回憶'
+    });
+    state.materials=materials;
+    localStorage.setItem('life-archive-writing-studio-v1',JSON.stringify(state));
+    window.LifeArchiveDashboard?.render?.();
+    render();
+  }
+"""
+          if 'function createMaterialFromMemory' not in s:
+              if stage_anchor not in s: raise SystemExit('memory stage anchor not found')
+              s=s.replace(stage_anchor,helper,1)
+
+          old_actions="""            <div class=\"mem-card-actions\"><span class=\"mem-save-state\" data-memory-save>✓ 已自動儲存</span><button class=\"btn mem-danger\" data-memory-delete>刪除</button></div>"""
+          new_actions="""            <div class=\"mem-card-actions\"><span class=\"mem-save-state\" data-memory-save>✓ 已自動儲存</span><button class=\"btn\" data-memory-material>${linkedMaterials(item.id).length?'✓ 已建立素材':'＋ 建立故事素材'}</button><button class=\"btn mem-danger\" data-memory-delete>刪除</button></div>"""
+          if 'data-memory-material' not in s:
+              if old_actions not in s: raise SystemExit('memory actions target not found')
+              s=s.replace(old_actions,new_actions,1)
+
+          delete_anchor="""    grid.querySelectorAll('[data-memory-delete]').forEach(button=>{
+"""
+          material_bind="""    grid.querySelectorAll('[data-memory-material]').forEach(button=>{
+      button.onclick=()=>{
+        const id=button.closest('[data-memory-id]')?.dataset.memoryId;
+        const item=items.find(x=>x.id===id);
+        createMaterialFromMemory(item);
+      };
+    });
+
+"""
+          if "grid.querySelectorAll('[data-memory-material]')" not in s:
+              if delete_anchor not in s: raise SystemExit('memory delete anchor not found')
+              s=s.replace(delete_anchor,material_bind+delete_anchor,1)
+
+          p.write_text(s)
+
+          # --- service worker ---
+          sw=Path('service-worker.js')
+          t=sw.read_text()
+          import re
+          t=re.sub(r"life-archive-pwa-v\\d+","life-archive-pwa-v41",t,count=1)
+          sw.write_text(t)
+          PY
+      - name: Validate
+        run: |
+          node --check materials-editor.js
+          node --check memories.js
+          grep -q "experienceCategory" materials-editor.js
+          grep -q "data-material-field=\"place\"" materials-editor.js
+          grep -q "data-material-field=\"feeling\"" materials-editor.js
+          grep -q "createMaterialFromMemory" memories.js
+          grep -q "data-memory-material" memories.js
+          grep -q "life-archive-pwa-v41" service-worker.js
+      - name: Commit and self-delete
+        run: |
+          rm .github/workflows/align-memory-material-fields.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add materials-editor.js memories.js service-worker.js .github/workflows/align-memory-material-fields.yml
+          git commit -m "feat: align memory and material metadata"
+          git push
