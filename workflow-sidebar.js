@@ -9,7 +9,7 @@ const WORKFLOW=[
 
 const LABELS={
   dashboard:'⌂ 今日工作台',timeline:'◷ 人生時間軸',memories:'▧ 照片回憶',source:'≡ 原始文字',
-  materials:'◇ 素材庫',triage:'▦ 文字拆解台',visual:'✦ 故事工作台',compass:'◎ 全書定位',outline:'☷ 章節地圖',
+  materials:'◇ 素材庫',triage:'▦ 素材整理台',visual:'✦ 故事工作台',compass:'◎ 全書定位',outline:'☷ 章節地圖',
   editor:'✎ 章節編輯器',references:'❝ 引用與借鏡',diagnosis:'⚑ 修稿檢查',export:'⇩ 備份與匯出'
 };
 
@@ -67,8 +67,8 @@ function buildSidebar(){
 
 function renamePageHeadings(){
   const triage=document.querySelector('#v-triage .heading');
-  if(triage?.querySelector('h1'))triage.querySelector('h1').textContent='文字拆解台';
-  if(triage?.querySelector('p'))triage.querySelector('p').textContent='把舊稿、筆記或一大段文字拆成可以重複使用的故事素材。';
+  if(triage?.querySelector('h1'))triage.querySelector('h1').textContent='素材整理台';
+  if(triage?.querySelector('p'))triage.querySelector('p').textContent='整理舊文字或人生經歷，再把有價值的內容送進素材庫。';
   const visual=document.querySelector('#v-visual .heading');
   if(visual?.querySelector('h1'))visual.querySelector('h1').textContent='故事工作台';
   if(visual?.querySelector('p'))visual.querySelector('p').textContent='把素材依「靈感箱 → 發展中 → 可寫作 → 已放入章節」推進。';
