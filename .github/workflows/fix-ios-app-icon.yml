@@ -1,0 +1,86 @@
+name: Fix iOS App Icon
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-ios-app-icon.yml'
+permissions:
+  contents: write
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build PNG icons from current app icon
+        run: |
+          python3 - <<'PY'
+          import base64,re,struct,zlib
+          from pathlib import Path
+
+          svg=Path('app-icon.svg').read_text()
+          m=re.search(r'base64,([^\"]+)',svg)
+          if not m:
+              raise SystemExit('embedded PNG not found in app-icon.svg')
+          raw=base64.b64decode(m.group(1))
+          Path('icon-source.png').write_bytes(raw)
+          PY
+          python3 -m pip install pillow --quiet
+          python3 - <<'PY'
+          from PIL import Image
+          from pathlib import Path
+          im=Image.open('icon-source.png').convert('RGBA')
+          for size,name in [(180,'apple-touch-icon.png'),(192,'icon-192.png'),(512,'icon-512.png')]:
+              out=im.resize((size,size),Image.Resampling.LANCZOS)
+              out.save(name,'PNG',optimize=True)
+          Path('icon-source.png').unlink()
+          PY
+      - name: Wire icons into app
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          p=Path('index.html')
+          s=p.read_text()
+          touch='<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">'
+          if 'apple-touch-icon.png' not in s:
+              if '<link rel="manifest" href="manifest.webmanifest">' in s:
+                  s=s.replace('<link rel="manifest" href="manifest.webmanifest">','<link rel="manifest" href="manifest.webmanifest">\n'+touch)
+              else:
+                  s=s.replace('</head>',touch+'\n</head>')
+          p.write_text(s)
+
+          p=Path('manifest.webmanifest')
+          data=json.loads(p.read_text())
+          data['icons']=[
+            {'src':'./icon-192.png','sizes':'192x192','type':'image/png','purpose':'any'},
+            {'src':'./icon-512.png','sizes':'512x512','type':'image/png','purpose':'any'},
+            {'src':'./icon-512.png','sizes':'512x512','type':'image/png','purpose':'maskable'}
+          ]
+          p.write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n')
+
+          p=Path('service-worker.js')
+          s=p.read_text()
+          import re
+          s=re.sub(r"life-archive-pwa-v\d+","life-archive-pwa-v36",s,count=1)
+          for icon in ['./apple-touch-icon.png','./icon-192.png','./icon-512.png']:
+              if repr(icon) not in s:
+                  s=s.replace("'./app-icon.svg'", "'./app-icon.svg',"+repr(icon),1)
+          p.write_text(s)
+          PY
+      - name: Validate
+        run: |
+          test -s apple-touch-icon.png
+          test -s icon-192.png
+          test -s icon-512.png
+          grep -q 'apple-touch-icon.png' index.html
+          grep -q 'icon-192.png' manifest.webmanifest
+          grep -q 'icon-512.png' manifest.webmanifest
+          grep -q 'life-archive-pwa-v36' service-worker.js
+      - name: Commit and self-delete
+        run: |
+          rm .github/workflows/fix-ios-app-icon.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apple-touch-icon.png icon-192.png icon-512.png index.html manifest.webmanifest service-worker.js .github/workflows/fix-ios-app-icon.yml
+          git commit -m "fix: support iPhone home screen app icon"
+          git push
