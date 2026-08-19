@@ -1,0 +1,138 @@
+name: Fix material editor input and select
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/fix-material-input-select.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch materials editor
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          p = Path('materials-editor.js')
+          s = p.read_text()
+
+          old = """function bindRows(){
+  document.querySelectorAll('[data-expand]').forEach(b=>b.addEventListener('click',()=>{const id=b.closest('[data-material-id]')?.dataset.materialId;expandedId=expandedId===id?null:id;renderEditor()}));
+  document.querySelectorAll('[data-material-field]').forEach(control=>{
+    const saveChange=()=>{
+      const card=control.closest('[data-material-id]');const item=materialState.find(x=>x.id===card?.dataset.materialId);if(!item)return;
+      item[control.dataset.materialField]=control.value;
+      const status=card.querySelector('[data-material-save]');if(status)status.textContent='儲存中…';
+      clearTimeout(saveTimer);saveTimer=setTimeout(()=>{persist();if(status)status.textContent='✓ 已儲存';if(['tags','stage','chapterId','timelineId','time'].includes(control.dataset.materialField))setTimeout(renderEditor,50)},300);
+    };
+    control.addEventListener('input',saveChange);control.addEventListener('change',saveChange);
+  });
+  document.querySelectorAll('[data-material-delete]').forEach(button=>button.addEventListener('click',()=>{
+    const id=button.closest('[data-material-id]')?.dataset.materialId;if(!id||!confirm('刪除這筆素材？'))return;
+    deletedIds.add(id);materialState=materialState.filter(x=>x.id!==id);persist();if(expandedId===id)expandedId=null;renderEditor();
+  }));
+}
+"""
+
+          new = """function bindRows(){
+  document.querySelectorAll('[data-expand]').forEach(b=>b.addEventListener('click',()=>{const id=b.closest('[data-material-id]')?.dataset.materialId;expandedId=expandedId===id?null:id;renderEditor()}));
+  document.querySelectorAll('[data-material-field]').forEach(control=>{
+    const updateState=()=>{
+      const card=control.closest('[data-material-id]');
+      const item=materialState.find(x=>x.id===card?.dataset.materialId);
+      if(!item)return null;
+      item[control.dataset.materialField]=control.value;
+      const status=card.querySelector('[data-material-save]');
+      if(status)status.textContent='儲存中…';
+      return {card,item,status};
+    };
+
+    if(control.tagName==='SELECT'){
+      control.addEventListener('change',()=>{
+        const result=updateState();if(!result)return;
+        clearTimeout(saveTimer);
+        persist();
+        if(result.status)result.status.textContent='✓ 已儲存';
+        const field=control.dataset.materialField;
+        if(['stage','chapterId','timelineId'].includes(field))requestAnimationFrame(renderEditor);
+      });
+    }else{
+      control.addEventListener('input',()=>{
+        const result=updateState();if(!result)return;
+        clearTimeout(saveTimer);
+        saveTimer=setTimeout(()=>{
+          persist();
+          if(result.status&&document.contains(result.status))result.status.textContent='✓ 已儲存';
+        },300);
+      });
+      control.addEventListener('change',()=>{
+        const result=updateState();if(!result)return;
+        clearTimeout(saveTimer);
+        persist();
+        if(result.status)result.status.textContent='✓ 已儲存';
+        if(['tags','time'].includes(control.dataset.materialField))requestAnimationFrame(renderEditor);
+      });
+    }
+  });
+  document.querySelectorAll('[data-material-delete]').forEach(button=>button.addEventListener('click',()=>{
+    const id=button.closest('[data-material-id]')?.dataset.materialId;if(!id||!confirm('刪除這筆素材？'))return;
+    deletedIds.add(id);materialState=materialState.filter(x=>x.id!==id);persist();if(expandedId===id)expandedId=null;renderEditor();
+  }));
+}
+"""
+
+          if old not in s:
+              raise SystemExit('bindRows target not found')
+          s = s.replace(old, new)
+
+          old_init = """function init(){
+  const list=document.getElementById('materialList');if(!list)return;
+  materialState=cloneMaterials(readState().materials).map(normalizeMaterial);addStyles();renderEditor();
+  const observer=new MutationObserver(()=>{if(rendering)return;requestAnimationFrame(renderEditor)});observer.observe(list,{childList:true});
+  document.querySelector('#nav [data-v=\"materials\"]')?.addEventListener('click',()=>setTimeout(renderEditor,0));
+  const addButton=document.getElementById('addMaterial');addButton?.addEventListener('click',()=>setTimeout(()=>{syncFromStorage();const newest=materialState[materialState.length-1];if(newest)expandedId=newest.id;renderEditor()},60));
+}
+"""
+
+          new_init = """function init(){
+  const list=document.getElementById('materialList');if(!list)return;
+  materialState=cloneMaterials(readState().materials).map(normalizeMaterial);addStyles();renderEditor();
+  document.querySelector('#nav [data-v=\"materials\"]')?.addEventListener('click',()=>setTimeout(renderEditor,0));
+  const addButton=document.getElementById('addMaterial');addButton?.addEventListener('click',()=>setTimeout(()=>{syncFromStorage();const newest=materialState[materialState.length-1];if(newest)expandedId=newest.id;renderEditor()},60));
+}
+"""
+
+          if old_init not in s:
+              raise SystemExit('init observer target not found')
+          s = s.replace(old_init, new_init)
+          p.write_text(s)
+
+          sw = Path('service-worker.js')
+          t = sw.read_text()
+          import re
+          t, n = re.subn(r"life-archive-pwa-v(\d+)", lambda m: f"life-archive-pwa-v{int(m.group(1))+1}", t, count=1)
+          if n != 1:
+              raise SystemExit('cache version target not found')
+          sw.write_text(t)
+          PY
+
+      - name: Validate
+        run: |
+          node --check materials-editor.js
+          grep -q "if(control.tagName==='SELECT')" materials-editor.js
+          ! grep -q "new MutationObserver" materials-editor.js
+
+      - name: Commit fix and remove workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          rm .github/workflows/fix-material-input-select.yml
+          git add materials-editor.js service-worker.js .github/workflows/fix-material-input-select.yml
+          git commit -m "fix: stabilize material editor inputs and selects"
+          git push
