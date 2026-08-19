@@ -1,0 +1,118 @@
+name: Link Memories to Materials
+on:
+  push:
+    paths:
+      - '.github/workflows/link-memories-to-materials.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch memories to create linked materials
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('memories.js')
+          s=p.read_text()
+
+          anchor="""  function stages(value){
+    const options=['國小','國中','高中','大學','研究所','工作','旅行','交換','運動','娛樂','挑戰','其他'];
+    if(value && !options.includes(value)) options.push(value);
+    return options.map(x=>`<option${x===value?' selected':''}>${x}</option>`).join('');
+  }
+"""
+          insert=anchor+"""
+  function readWritingState(){
+    try{return JSON.parse(localStorage.getItem('life-archive-writing-studio-v1')||'{}')||{}}catch{return {}}
+  }
+
+  function linkedMaterials(memoryId){
+    const state=readWritingState();
+    return (Array.isArray(state.materials)?state.materials:[]).filter(m=>m.memoryId===memoryId);
+  }
+
+  function createMaterialFromMemory(item){
+    if(!item) return;
+    const state=readWritingState();
+    const materials=Array.isArray(state.materials)?state.materials:[];
+    const existing=materials.find(m=>m.memoryId===item.id);
+    if(existing && !confirm(`這筆照片回憶已建立素材「${existing.title||'未命名素材'}」。仍要再建立一筆嗎？`)) return;
+
+    const parts=[];
+    if(item.story) parts.push(item.story);
+    const context=[];
+    if(item.place) context.push(`地點：${item.place}`);
+    if(item.feeling) context.push(`感受：${item.feeling}`);
+    if(item.stage) context.push(`經歷分類：${item.stage}`);
+    if(context.length) parts.push(`【回憶資訊】\n${context.join('\n')}`);
+
+    const material={
+      id:uid(),
+      title:String(item.title||item.story||item.when||'照片回憶').trim().slice(0,80),
+      content:parts.join('\n\n'),
+      materialType:'事件素材',
+      stage:'靈感箱',
+      time:item.when||'',
+      timePrecision:'待確認',
+      tags:item.tags||'',
+      chapterId:String(item.chapterIds||'').split(/[,，\s]+/).filter(Boolean)[0]||'',
+      timelineId:'',
+      memoryId:item.id,
+      source:'照片回憶'
+    };
+    materials.push(material);
+    state.materials=materials;
+    localStorage.setItem('life-archive-writing-studio-v1',JSON.stringify(state));
+    window.LifeArchiveDashboard?.render?.();
+    render();
+  }
+"""
+          if anchor not in s: raise SystemExit('stage anchor not found')
+          s=s.replace(anchor,insert,1)
+
+          old="""            <label>那時候，我在做什麼？<textarea data-memory-field=\"story\">${esc(item.story)}</textarea></label>
+            <div class=\"mem-card-actions\"><span class=\"mem-save-state\" data-memory-save>✓ 已自動儲存</span><button class=\"btn mem-danger\" data-memory-delete>刪除</button></div>
+"""
+          new="""            <label>那時候，我在做什麼？<textarea data-memory-field=\"story\">${esc(item.story)}</textarea></label>
+            <div class=\"mem-card-actions\"><span class=\"mem-save-state\" data-memory-save>✓ 已自動儲存</span><button class=\"btn\" data-memory-material>${linkedMaterials(item.id).length?'✓ 已建立素材':'＋ 建立故事素材'}</button><button class=\"btn mem-danger\" data-memory-delete>刪除</button></div>
+"""
+          if old not in s: raise SystemExit('memory action block not found')
+          s=s.replace(old,new,1)
+
+          bind_anchor="""    grid.querySelectorAll('[data-memory-delete]').forEach(button=>{
+"""
+          bind_insert="""    grid.querySelectorAll('[data-memory-material]').forEach(button=>{
+      button.onclick=()=>{
+        const id=button.closest('[data-memory-id]')?.dataset.memoryId;
+        const item=items.find(x=>x.id===id);
+        createMaterialFromMemory(item);
+      };
+    });
+
+"""+bind_anchor
+          if bind_anchor not in s: raise SystemExit('delete binding anchor not found')
+          s=s.replace(bind_anchor,bind_insert,1)
+
+          p.write_text(s)
+
+          sw=Path('service-worker.js')
+          t=sw.read_text().replace("life-archive-pwa-v39","life-archive-pwa-v40",1)
+          sw.write_text(t)
+          PY
+      - name: Validate
+        run: |
+          node --check memories.js
+          grep -q "createMaterialFromMemory" memories.js
+          grep -q "memoryId:item.id" memories.js
+          grep -q "建立故事素材" memories.js
+          grep -q "life-archive-pwa-v40" service-worker.js
+      - name: Commit and self-delete
+        run: |
+          rm .github/workflows/link-memories-to-materials.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add memories.js service-worker.js .github/workflows/link-memories-to-materials.yml
+          git commit -m "feat: create story materials from photo memories"
+          git push
