@@ -146,13 +146,41 @@ function bindToolbar(){
 function bindRows(){
   document.querySelectorAll('[data-expand]').forEach(b=>b.addEventListener('click',()=>{const id=b.closest('[data-material-id]')?.dataset.materialId;expandedId=expandedId===id?null:id;renderEditor()}));
   document.querySelectorAll('[data-material-field]').forEach(control=>{
-    const saveChange=()=>{
-      const card=control.closest('[data-material-id]');const item=materialState.find(x=>x.id===card?.dataset.materialId);if(!item)return;
+    const updateState=()=>{
+      const card=control.closest('[data-material-id]');
+      const item=materialState.find(x=>x.id===card?.dataset.materialId);
+      if(!item)return null;
       item[control.dataset.materialField]=control.value;
-      const status=card.querySelector('[data-material-save]');if(status)status.textContent='儲存中…';
-      clearTimeout(saveTimer);saveTimer=setTimeout(()=>{persist();if(status)status.textContent='✓ 已儲存';if(['tags','stage','chapterId','timelineId','time'].includes(control.dataset.materialField))setTimeout(renderEditor,50)},300);
+      const status=card.querySelector('[data-material-save]');
+      if(status)status.textContent='儲存中…';
+      return {status};
     };
-    control.addEventListener('input',saveChange);control.addEventListener('change',saveChange);
+
+    if(control.tagName==='SELECT'){
+      control.addEventListener('change',()=>{
+        const result=updateState();if(!result)return;
+        clearTimeout(saveTimer);
+        persist();
+        if(result.status)result.status.textContent='✓ 已儲存';
+        if(['stage','chapterId','timelineId'].includes(control.dataset.materialField))requestAnimationFrame(renderEditor);
+      });
+    }else{
+      control.addEventListener('input',()=>{
+        const result=updateState();if(!result)return;
+        clearTimeout(saveTimer);
+        saveTimer=setTimeout(()=>{
+          persist();
+          if(result.status&&document.contains(result.status))result.status.textContent='✓ 已儲存';
+        },300);
+      });
+      control.addEventListener('change',()=>{
+        const result=updateState();if(!result)return;
+        clearTimeout(saveTimer);
+        persist();
+        if(result.status)result.status.textContent='✓ 已儲存';
+        if(['tags','time'].includes(control.dataset.materialField))requestAnimationFrame(renderEditor);
+      });
+    }
   });
   document.querySelectorAll('[data-material-delete]').forEach(button=>button.addEventListener('click',()=>{
     const id=button.closest('[data-material-id]')?.dataset.materialId;if(!id||!confirm('刪除這筆素材？'))return;
@@ -176,7 +204,6 @@ function addStyles(){
 function init(){
   const list=document.getElementById('materialList');if(!list)return;
   materialState=cloneMaterials(readState().materials).map(normalizeMaterial);addStyles();renderEditor();
-  const observer=new MutationObserver(()=>{if(rendering)return;requestAnimationFrame(renderEditor)});observer.observe(list,{childList:true});
   document.querySelector('#nav [data-v="materials"]')?.addEventListener('click',()=>setTimeout(renderEditor,0));
   const addButton=document.getElementById('addMaterial');addButton?.addEventListener('click',()=>setTimeout(()=>{syncFromStorage();const newest=materialState[materialState.length-1];if(newest)expandedId=newest.id;renderEditor()},60));
 }
