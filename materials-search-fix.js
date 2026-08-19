@@ -38,23 +38,52 @@
     return item;
   }
 
-  function openNewestMaterial(item){
-    const materialsNav=document.querySelector('#nav [data-v="materials"]');
-    if(materialsNav)materialsNav.click();
-    setTimeout(()=>{
-      const row=document.querySelector(`[data-material-id="${CSS.escape(String(item.id))}"]`);
-      if(!row)return;
-      if(!row.classList.contains('open'))row.querySelector('[data-expand]')?.click();
-      setTimeout(()=>{
-        const editor=document.querySelector(`[data-material-id="${CSS.escape(String(item.id))}"]`);
+  function selectorForId(id){
+    const value=String(id);
+    const escaped=globalThis.CSS?.escape?CSS.escape(value):value.replace(/["\\]/g,'\\$&');
+    return `[data-material-id="${escaped}"]`;
+  }
+
+  function focusMaterial(item){
+    requestAnimationFrame(()=>{
+      requestAnimationFrame(()=>{
+        const editor=document.querySelector(selectorForId(item.id));
         const title=editor?.querySelector('[data-material-field="title"]');
         title?.focus();
         editor?.scrollIntoView({behavior:'smooth',block:'center'});
-      },40);
-    },90);
+      });
+    });
   }
 
-  // 新增素材改成直接建立空白素材卡，不再跳出 prompt。
+  function openNewestMaterial(item){
+    // materials-editor.js is loaded before this file. Use its own state/render pipeline
+    // so add → save → render → expand happens in one synchronous flow.
+    try{
+      if(typeof syncFromStorage==='function'&&typeof renderEditor==='function'){
+        if(typeof searchTerm!=='undefined')searchTerm='';
+        if(typeof stageFilter!=='undefined')stageFilter='全部';
+        if(typeof tagFilter!=='undefined')tagFilter='全部';
+        if(typeof categoryFilter!=='undefined')categoryFilter='全部';
+        if(typeof expandedId!=='undefined')expandedId=item.id;
+        syncFromStorage();
+        renderEditor();
+        focusMaterial(item);
+        return;
+      }
+    }catch(err){console.warn('material editor refresh fallback',err)}
+
+    // Fallback for an older cached page where the editor globals are not ready yet.
+    const materialsNav=document.querySelector('#nav [data-v="materials"]');
+    if(materialsNav)materialsNav.click();
+    setTimeout(()=>{
+      const row=document.querySelector(selectorForId(item.id));
+      if(!row)return;
+      if(!row.classList.contains('open'))row.querySelector('[data-expand]')?.click();
+      focusMaterial(item);
+    },120);
+  }
+
+  // 新增素材：直接建立空白素材卡並在素材庫內展開，不使用 prompt。
   document.addEventListener('click',event=>{
     const button=event.target?.closest?.('#addMaterial');
     if(!button)return;
@@ -115,7 +144,6 @@
     timer=setTimeout(()=>applySearch(value),120);
   }
 
-  // 中文輸入法組字期間完全不攔截，讓瀏覽器正常完成注音／選字。
   document.addEventListener('compositionstart',event=>{
     if(event.target?.id==='materialSearch')composing=true;
   },true);
