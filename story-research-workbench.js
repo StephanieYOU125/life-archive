@@ -70,11 +70,11 @@
   }
 
   function rename(){
-    document.querySelectorAll('#nav [data-v="triage"]').forEach(b=>b.textContent='▦ 素材整理台');
-    document.querySelectorAll('#nav [data-v="references"]').forEach(b=>b.textContent='❝ 引用與借鏡');
+    document.querySelectorAll('#nav [data-v="triage"]').forEach(b=>{if(b.textContent!=='▦ 素材整理台')b.textContent='▦ 素材整理台'});
+    document.querySelectorAll('#nav [data-v="references"]').forEach(b=>{if(b.textContent!=='❝ 引用與借鏡')b.textContent='❝ 引用與借鏡'});
     document.querySelectorAll('#nav [data-v="story-organizer"]').forEach(b=>b.remove());
-    const crumb=document.getElementById('crumb');if(document.getElementById('v-triage')?.classList.contains('active')&&crumb)crumb.textContent='素材整理台';
+    const crumb=document.getElementById('crumb');if(document.getElementById('v-triage')?.classList.contains('active')&&crumb&&crumb.textContent!=='素材整理台')crumb.textContent='素材整理台';
   }
-  function init(){let tries=0;const timer=setInterval(()=>{rename();if(build()||++tries>30)clearInterval(timer)},100);const nav=document.getElementById('nav');if(nav)new MutationObserver(rename).observe(nav,{childList:true,subtree:true})}
+  function init(){let tries=0;const timer=setInterval(()=>{rename();if(build()||++tries>30)clearInterval(timer)},100);rename()}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
