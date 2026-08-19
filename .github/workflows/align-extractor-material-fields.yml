@@ -1,0 +1,125 @@
+name: Align Story Extractor and Materials
+on:
+  push:
+    paths:
+      - '.github/workflows/align-extractor-material-fields.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Align material schema and extractor UI
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          # materials-editor.js
+          p=Path('materials-editor.js')
+          s=p.read_text()
+          if 'EXPERIENCE_CATEGORIES' not in s:
+              s=s.replace("const TIME_PRECISIONS=['精確日期','年月','年份','約略時間','待確認'];",
+                          "const TIME_PRECISIONS=['精確日期','年月','年份','約略時間','待確認'];\nconst EXPERIENCE_CATEGORIES=['國小','國中','高中','大學','研究所','工作','旅行','交換','運動','娛樂','挑戰','其他'];\nconst MATERIAL_TYPES=['事件素材','想法素材','轉折素材'];")
+          s=s.replace(
+              "function normalizeMaterial(item){return {...item,time:item.time||'',timePrecision:item.timePrecision||'待確認',tags:item.tags||'',chapterId:item.chapterId||'',timelineId:item.timelineId||'',stage:item.stage||'靈感箱'}}",
+              "function normalizeMaterial(item){return {...item,time:item.time||'',timePrecision:item.timePrecision||'待確認',experienceCategory:item.experienceCategory||'其他',place:item.place||'',feeling:item.feeling||'',materialType:item.materialType||'事件素材',tags:item.tags||'',chapterId:item.chapterId||'',timelineId:item.timelineId||'',memoryId:item.memoryId||'',stage:item.stage||'靈感箱'}}")
+          if 'function categoryOptions' not in s:
+              s=s.replace(
+                  "function precisionOptions(value){return TIME_PRECISIONS.map(s=>`<option${s===value?' selected':''}>${s}</option>`).join('')}",
+                  "function precisionOptions(value){return TIME_PRECISIONS.map(s=>`<option${s===value?' selected':''}>${s}</option>`).join('')}\nfunction categoryOptions(value){const options=[...EXPERIENCE_CATEGORIES];if(value&&!options.includes(value))options.push(value);return options.map(s=>`<option${s===value?' selected':''}>${s}</option>`).join('')}\nfunction typeOptions(value){const options=[...MATERIAL_TYPES];if(value&&!options.includes(value))options.push(value);return options.map(s=>`<option${s===value?' selected':''}>${s}</option>`).join('')}")
+          s=s.replace(
+              "[x.title,x.content,x.time,x.tags,chapterTitle(x),timelineTitle(x),x.stage]",
+              "[x.title,x.content,x.time,x.experienceCategory,x.place,x.feeling,x.materialType,x.tags,chapterTitle(x),timelineTitle(x),x.stage]")
+
+          old='''      <label class="material-field"><span>時間</span><input data-material-field="time" value="${esc(item.time)}" placeholder="例：2018/08/03、2023–2026、約2016寒假"></label>\n      <label class="material-field"><span>時間精度</span><select data-material-field="timePrecision">${precisionOptions(item.timePrecision)}</select></label>\n      <label class="material-field"><span>寫作狀態</span><select data-material-field="stage">${stageOptions(item.stage)}</select></label>\n      <label class="material-field"><span>所屬篇章</span><select data-material-field="chapterId">${chapterOptions(item.chapterId)}</select></label>\n      <label class="material-field"><span>來源時間軸</span><select data-material-field="timelineId">${timelineOptions(item.timelineId)}</select></label>'''
+          new='''      <label class="material-field"><span>時間</span><input data-material-field="time" value="${esc(item.time)}" placeholder="例：2018/08/03、2023–2026、約2016寒假"></label>\n      <label class="material-field"><span>時間精度</span><select data-material-field="timePrecision">${precisionOptions(item.timePrecision)}</select></label>\n      <label class="material-field"><span>經歷分類</span><select data-material-field="experienceCategory">${categoryOptions(item.experienceCategory)}</select></label>\n      <label class="material-field"><span>地點</span><input data-material-field="place" value="${esc(item.place)}" placeholder="例如：東京、臺北、學校"></label>\n      <label class="material-field"><span>感受</span><input data-material-field="feeling" value="${esc(item.feeling)}" placeholder="例如：期待、害怕、安心"></label>\n      <label class="material-field"><span>素材類型</span><select data-material-field="materialType">${typeOptions(item.materialType)}</select></label>\n      <label class="material-field"><span>寫作狀態</span><select data-material-field="stage">${stageOptions(item.stage)}</select></label>\n      <label class="material-field"><span>所屬篇章</span><select data-material-field="chapterId">${chapterOptions(item.chapterId)}</select></label>\n      <label class="material-field"><span>來源時間軸</span><select data-material-field="timelineId">${timelineOptions(item.timelineId)}</select></label>'''
+          if old not in s:
+              raise SystemExit('materials editor field block not found')
+          s=s.replace(old,new,1)
+          s=s.replace("['tags','stage','chapterId','timelineId','time']", "['tags','stage','chapterId','timelineId','time','experienceCategory','place','feeling','materialType']")
+          p.write_text(s)
+
+          # story-extractor.js
+          p=Path('story-extractor.js')
+          s=p.read_text()
+          helpers="""
+  const EXPERIENCE_CATEGORIES=['國小','國中','高中','大學','研究所','工作','旅行','交換','運動','娛樂','挑戰','其他'];
+  const TIME_PRECISIONS=['精確日期','年月','年份','約略時間','待確認'];
+  const WRITING_STAGES=['靈感箱','發展中','可寫作','已放入章節'];
+  const MATERIAL_TYPES=['事件素材','想法素材','轉折素材'];
+  function options(list,value){return list.map(x=>`<option${x===value?' selected':''}>${x}</option>`).join('')}
+  function chapterOptions(){const chapters=Array.isArray(readState().chapters)?readState().chapters:[];return `<option value="">未指定篇章</option>`+chapters.map(c=>`<option value="${c.id}">${String(c.title||'未命名章節').replace(/[&<>\"']/g,'')}</option>`).join('')}
+  function timelineOptions(){try{const rows=JSON.parse(localStorage.getItem('life-archive-timeline-v1')||'[]');return `<option value="">未連結時間軸</option>`+(Array.isArray(rows)?rows:[]).map(t=>`<option value="${t.id}">${String([t.time,t.identity].filter(Boolean).join(' · ')||'未命名事件').replace(/[&<>\"']/g,'')}</option>`).join('')}catch{return '<option value="">未連結時間軸</option>'}}
+"""
+          if 'const EXPERIENCE_CATEGORIES' not in s:
+              s=s.replace("  const uid=()=>crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2,7);",
+                          "  const uid=()=>crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2,7);\n"+helpers)
+
+          start=s.index('  function makeMaterial(){')
+          end=s.index('  function installStyles(){')
+          if start<0 or end<0: raise SystemExit('makeMaterial section not found')
+          make="""  function makeMaterial(){
+    const text=(q('#extractPreview')?.value||'').trim();
+    if(!text)return toast('先選取或帶入一段文字');
+    const meaning=(q('#extractMeaning')?.value||'').trim();
+    const state=readState();
+    const materials=Array.isArray(state.materials)?state.materials:[];
+    const content=meaning?`${text}\n\n【為什麼值得留下】\n${meaning}`:text;
+    materials.push({
+      id:uid(),
+      title:(q('#extractTitle')?.value||'').trim()||'從舊稿拆出的故事',
+      content,
+      materialType:q('#extractType')?.value||'事件素材',
+      stage:q('#extractStage')?.value||'靈感箱',
+      time:(q('#extractTime')?.value||'').trim(),
+      timePrecision:q('#extractTimePrecision')?.value||'待確認',
+      experienceCategory:q('#extractCategory')?.value||'其他',
+      place:(q('#extractPlace')?.value||'').trim(),
+      feeling:(q('#extractFeeling')?.value||'').trim(),
+      tags:(q('#extractTags')?.value||'').trim(),
+      chapterId:q('#extractChapter')?.value||'',
+      timelineId:q('#extractTimeline')?.value||'',
+      memoryId:'',
+      source:'故事拆解台'
+    });
+    state.materials=materials;
+    writeState(state);
+    ['extractTitle','extractTime','extractPlace','extractFeeling','extractTags','extractMeaning'].forEach(id=>{const el=q('#'+id);if(el)el.value=''});
+    preview('');
+    window.LifeArchiveDashboard?.render?.();
+    toast('已送進素材庫');
+  }
+"""
+          s=s[:start]+make+s[end:]
+
+          old_html='''      <div class="extractor-grid">\n        <label class="field"><span>素材標題</span><input id="extractTitle" placeholder="例如：久違地，被一群人的熱情感染"></label>\n        <label class="field"><span>素材類型</span><select id="extractType"><option>事件素材</option><option>想法素材</option><option>轉折素材</option></select></label>\n      </div>\n      <label class="field extractor-meaning"><span>為什麼值得留下？</span><textarea id="extractMeaning" placeholder="它讓我看見什麼？改變了什麼？之後可能可以寫什麼？"></textarea></label>'''
+          new_html='''      <div class="extractor-grid">\n        <label class="field"><span>素材標題</span><input id="extractTitle" placeholder="例如：久違地，被一群人的熱情感染"></label>\n        <label class="field"><span>素材類型</span><select id="extractType">${options(MATERIAL_TYPES,'事件素材')}</select></label>\n        <label class="field"><span>時間</span><input id="extractTime" placeholder="例如：2026.08.18"></label>\n        <label class="field"><span>時間精度</span><select id="extractTimePrecision">${options(TIME_PRECISIONS,'待確認')}</select></label>\n        <label class="field"><span>經歷分類</span><select id="extractCategory">${options(EXPERIENCE_CATEGORIES,'其他')}</select></label>\n        <label class="field"><span>地點</span><input id="extractPlace" placeholder="例如：臺北、東京、學校"></label>\n        <label class="field"><span>感受</span><input id="extractFeeling" placeholder="例如：開心、緊張、安心"></label>\n        <label class="field"><span>寫作狀態</span><select id="extractStage">${options(WRITING_STAGES,'靈感箱')}</select></label>\n        <label class="field"><span>所屬篇章</span><select id="extractChapter">${chapterOptions()}</select></label>\n        <label class="field"><span>來源時間軸</span><select id="extractTimeline">${timelineOptions()}</select></label>\n      </div>\n      <label class="field"><span>標籤</span><input id="extractTags" placeholder="例如：工作, 團隊, 成長"></label>\n      <label class="field extractor-meaning"><span>為什麼值得留下？</span><textarea id="extractMeaning" placeholder="它讓我看見什麼？改變了什麼？之後可能可以寫什麼？"></textarea></label>'''
+          if old_html not in s: raise SystemExit('extractor field block not found')
+          s=s.replace(old_html,new_html,1)
+          p.write_text(s)
+
+          sw=Path('service-worker.js')
+          t=sw.read_text()
+          t=re.sub(r"life-archive-pwa-v\d+","life-archive-pwa-v42",t,count=1)
+          sw.write_text(t)
+          PY
+      - name: Validate
+        run: |
+          node --check materials-editor.js
+          node --check story-extractor.js
+          grep -q 'experienceCategory' materials-editor.js
+          grep -q 'data-material-field="place"' materials-editor.js
+          grep -q 'id="extractCategory"' story-extractor.js
+          grep -q 'id="extractChapter"' story-extractor.js
+          grep -q 'id="extractTimeline"' story-extractor.js
+          grep -q 'life-archive-pwa-v42' service-worker.js
+      - name: Commit and self-delete
+        run: |
+          rm .github/workflows/align-extractor-material-fields.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add materials-editor.js story-extractor.js service-worker.js .github/workflows/align-extractor-material-fields.yml
+          git commit -m "feat: align story extractor and material fields"
+          git push
