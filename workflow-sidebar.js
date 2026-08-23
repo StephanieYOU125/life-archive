@@ -13,6 +13,16 @@ const LABELS={
   editor:'✎ 章節編輯器',references:'❝ 引用與借鏡',diagnosis:'⚑ 修稿檢查',export:'⇩ 備份與匯出'
 };
 
+const SYSTEM_OPTION_EN={
+  '全部':'All','國小':'Elementary School','國中':'Junior High School','高中':'Senior High School','大學':'University','研究所':'Graduate School',
+  '工作':'Work','旅行':'Travel','交換':'Exchange','運動':'Sports','娛樂':'Leisure','挑戰':'Challenge','其他':'Other',
+  '靈感箱':'Idea Box','發展中':'Developing','可寫作':'Ready to Write','已放入章節':'Added to Chapter',
+  '精確日期':'Exact Date','年月':'Year / Month','年份':'Year','約略時間':'Approximate Time','待確認':'Needs Review',
+  '已確認':'Confirmed','部分確認':'Partly Confirmed','有矛盾':'Conflict','待確認來源':'Source to Verify','已確認來源':'Source Verified',
+  '書籍':'Book','文章／報導':'Article / Report','研究／論文':'Research / Paper','人物／訪談':'Person / Interview','影片／Podcast':'Video / Podcast','理論／概念':'Theory / Concept',
+  '未指定篇章':'No Chapter Assigned','未連結時間軸':'No Timeline Link','還沒決定放哪一章':'Chapter Not Decided'
+};
+
 function addStyles(){
   if(document.getElementById('workflowSidebarStyles'))return;
   const style=document.createElement('style');
@@ -74,10 +84,46 @@ function renamePageHeadings(){
   if(visual?.querySelector('p'))visual.querySelector('p').textContent='把素材依「靈感箱 → 發展中 → 可寫作 → 已放入章節」推進。';
 }
 
+function translateSystemOptions(root=document){
+  if(window.LifeArchiveI18n?.locale!=='en')return;
+  const options=[];
+  if(root instanceof HTMLOptionElement)options.push(root);
+  if(root.querySelectorAll)options.push(...root.querySelectorAll('option'));
+  options.forEach(option=>{
+    const original=option.dataset.zhLabel||option.textContent.trim();
+    if(!option.dataset.zhLabel)option.dataset.zhLabel=original;
+    if(!option.hasAttribute('value'))option.value=original;
+    const translated=SYSTEM_OPTION_EN[original];
+    if(translated)option.textContent=translated;
+  });
+}
+
+function loadI18n(){
+  const activate=()=>{
+    window.LifeArchiveI18n?.translate?.(document.body);
+    translateSystemOptions(document);
+    if(document.documentElement.dataset.i18nOptionWatch==='1')return;
+    document.documentElement.dataset.i18nOptionWatch='1';
+    const observer=new MutationObserver(records=>records.forEach(record=>record.addedNodes.forEach(node=>{
+      if(node.nodeType===Node.ELEMENT_NODE)translateSystemOptions(node);
+    })));
+    observer.observe(document.body,{childList:true,subtree:true});
+  };
+  if(window.LifeArchiveI18n){activate();return}
+  const existing=document.querySelector('script[data-life-archive-i18n]');
+  if(existing){existing.addEventListener('load',activate,{once:true});return}
+  const script=document.createElement('script');
+  script.src='./i18n.js';
+  script.dataset.lifeArchiveI18n='1';
+  script.addEventListener('load',activate,{once:true});
+  document.body.appendChild(script);
+}
+
 function init(){
   addStyles();
   renamePageHeadings();
   buildSidebar();
+  loadI18n();
 }
 
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});
