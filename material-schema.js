@@ -5,6 +5,7 @@ export const MATERIAL_DEFAULTS = Object.freeze({
   time: '',
   timePrecision: '待確認',
   experienceCategory: '其他',
+  materialType: '',
   tags: '',
   stage: '靈感箱',
   chapterId: '',
@@ -16,6 +17,15 @@ export const MATERIAL_DEFAULTS = Object.freeze({
   insight: '',
   source: ''
 });
+
+const KNOWN_FIELDS = new Set([
+  'id','title','time','timePrecision','experienceCategory','materialType','tags','stage',
+  'chapterId','timelineId','story','evidence','feelings','research','insight','source',
+  'content','story60','research15','reflection','insight25','schemaVersion',
+  'legacyFields','created','updated','createdAt'
+]);
+
+const TRANSIENT_FIELDS = new Set(['updatedAt','migratedAt','order']);
 
 function uid(){
   return globalThis.crypto?.randomUUID
@@ -52,8 +62,14 @@ function canonicalInsight(item){
     : firstLegacyValue(item.insight, item.insight25, item.reflection, '');
 }
 
+function unpackLegacyFields(item){
+  const legacy = item?.legacyFields;
+  return legacy && typeof legacy === 'object' && !Array.isArray(legacy) ? legacy : {};
+}
+
 export function normalizeMaterial(input = {}){
-  const item = input && typeof input === 'object' ? input : {};
+  const raw = input && typeof input === 'object' ? input : {};
+  const item = {...unpackLegacyFields(raw), ...raw};
   const story = String(canonicalStory(item) ?? '');
   const research = String(canonicalResearch(item) ?? '');
   const insight = String(canonicalInsight(item) ?? '');
@@ -65,6 +81,7 @@ export function normalizeMaterial(input = {}){
     time: String(item.time ?? MATERIAL_DEFAULTS.time),
     timePrecision: String(item.timePrecision ?? MATERIAL_DEFAULTS.timePrecision),
     experienceCategory: String(item.experienceCategory ?? MATERIAL_DEFAULTS.experienceCategory),
+    materialType: String(item.materialType ?? MATERIAL_DEFAULTS.materialType),
     tags: String(item.tags ?? MATERIAL_DEFAULTS.tags),
     stage: String(item.stage ?? MATERIAL_DEFAULTS.stage),
     chapterId: String(item.chapterId ?? MATERIAL_DEFAULTS.chapterId),
@@ -76,7 +93,7 @@ export function normalizeMaterial(input = {}){
     insight,
     source: String(item.source ?? MATERIAL_DEFAULTS.source),
 
-    // Compatibility aliases. Existing UI can keep using these during the v2 migration.
+    // Compatibility aliases during the v2 transition.
     content: story,
     story60: story,
     research15: research,
@@ -118,15 +135,57 @@ export function setMaterialField(item, field, value){
   return item;
 }
 
+function collectLegacyFields(normalized){
+  const legacy = {...unpackLegacyFields(normalized)};
+  for(const [key,value] of Object.entries(normalized)){
+    if(KNOWN_FIELDS.has(key) || TRANSIENT_FIELDS.has(key)) continue;
+    legacy[key] = value;
+  }
+  return legacy;
+}
+
 export function toFirestoreMaterial(input = {}, {order} = {}){
-  const normalized = normalizeMaterial(input);
-  const {updatedAt, migratedAt, ...clean} = normalized;
+  const item = normalizeMaterial(input);
+  const legacyFields = collectLegacyFields(item);
+  const clean = {
+    id: item.id,
+    title: item.title,
+    time: item.time,
+    timePrecision: item.timePrecision,
+    experienceCategory: item.experienceCategory,
+    materialType: item.materialType,
+    tags: item.tags,
+    stage: item.stage,
+    chapterId: item.chapterId,
+    timelineId: item.timelineId,
+    story: item.story,
+    evidence: item.evidence,
+    feelings: item.feelings,
+    research: item.research,
+    insight: item.insight,
+    source: item.source,
+
+    // Compatibility aliases for clients that still use the v1 UI field names.
+    content: item.story,
+    story60: item.story,
+    research15: item.research,
+    reflection: item.insight,
+    insight25: item.insight,
+
+    schemaVersion: MATERIAL_SCHEMA_VERSION
+  };
+
+  if(item.created !== undefined) clean.created = item.created;
+  if(item.updated !== undefined) clean.updated = item.updated;
+  if(item.createdAt !== undefined) clean.createdAt = item.createdAt;
+  if(Object.keys(legacyFields).length) clean.legacyFields = legacyFields;
   if(order !== undefined) clean.order = order;
   return clean;
 }
 
 export function fromFirestoreMaterial(data = {}, id = ''){
   return normalizeMaterial({
+    ...unpackLegacyFields(data),
     ...data,
     id: id || data.id || ''
   });
