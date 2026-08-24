@@ -1,7 +1,7 @@
 import './timeline-cloud-sync.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
-import { getFirestore, doc, getDoc, getDocs, setDoc, deleteDoc, collection, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
+import { getFirestore, doc, getDoc, getDocs, setDoc, deleteDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCaZnmoChuGKYUqRfYKgsV29liGqokiSjA",
@@ -14,6 +14,8 @@ const firebaseConfig = {
 };
 
 const LOCAL_KEY = 'life-archive-writing-studio-v1';
+const STORY_KEY = 'life-archive-story-organizer-v1';
+const TIMELINE_KEY = 'life-archive-timeline-v1';
 const CLOUD_FLAG = 'life-archive-cloud-enabled';
 const CLOUD_PANEL_COLLAPSED_KEY = 'life-archive-cloud-panel-collapsed';
 const app = initializeApp(firebaseConfig);
@@ -23,6 +25,7 @@ const provider = new GoogleAuthProvider();
 let cloudEnabled = localStorage.getItem(CLOUD_FLAG) === '1';
 let syncing = false;
 let syncTimer = null;
+let storySyncTimer = null;
 let lastSnapshot = readLocal();
 
 const style = document.createElement('style');
@@ -83,9 +86,18 @@ function setStatus(text, mode='') {
   statusEl.innerHTML = `<span class="cloud-dot ${mode}"></span>${text}`;
 }
 
+function readJSON(key, fallback=null) {
+  try { return JSON.parse(localStorage.getItem(key) || 'null') ?? fallback; }
+  catch { return fallback; }
+}
+
 function readLocal() {
-  try { return JSON.parse(localStorage.getItem(LOCAL_KEY) || 'null'); }
-  catch { return null; }
+  return readJSON(LOCAL_KEY, null);
+}
+
+function readStoryOrganizer() {
+  const value = readJSON(STORY_KEY, {});
+  return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
 }
 
 function safeDocData(obj) {
@@ -116,15 +128,27 @@ function bookSettings(s) {
     blockDecisions:s.blockDecisions || {},
     migration:s.migration || null,
     ...(publishingProposal ? {publishingProposal} : {}),
-    schemaVersion:3
+    schemaVersion:4
   };
+}
+
+async function syncStoryOrganizer() {
+  const user = auth.currentUser;
+  if (!user) return 0;
+  const storyOrganizer = readStoryOrganizer();
+  await setDoc(doc(db,'users',user.uid,'settings','workspace'), {
+    storyOrganizer:safeDocData(storyOrganizer),
+    schemaVersion:1,
+    updatedAt:serverTimestamp()
+  }, {merge:true});
+  return 1;
 }
 
 async function syncDiff(previous, current, showResult=false) {
   const user = auth.currentUser;
-  if (!user || !current || syncing) return;
+  if (!user || !current || syncing) return 0;
   syncing = true;
-  if (showResult) setStatus('正在同步 Life Archive 2.0…', 'busy');
+  if (showResult) setStatus('正在同步書稿、章節與素材…', 'busy');
   try {
     const beforeCh = mapById(previous?.chapters || []);
     const afterCh = mapById(current.chapters || []);
@@ -157,10 +181,14 @@ async function syncDiff(previous, current, showResult=false) {
     cloudEnabled = true;
     localStorage.setItem(CLOUD_FLAG,'1');
     lastSnapshot = JSON.parse(JSON.stringify(current));
-    setStatus(operations.length ? `已同步 ${operations.length} 項變更｜${new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'})}` : '資料庫已是最新狀態', 'ok');
+    if (showResult) {
+      setStatus(operations.length ? `已同步 ${operations.length} 項書稿變更` : '書稿資料庫已是最新狀態', 'ok');
+    }
+    return operations.length;
   } catch (err) {
     console.error('Firestore v2 sync failed', err);
-    setStatus(`資料庫同步失敗：${err.code || err.message || err}`);
+    if (showResult) setStatus(`資料庫同步失敗：${err.code || err.message || err}`);
+    throw err;
   } finally {
     syncing = false;
   }
@@ -170,23 +198,54 @@ async function fullSync(showResult=true) {
   const current = readLocal();
   if (!current) {
     if (showResult) setStatus('目前沒有本機書稿資料可同步');
-    return;
+    return false;
   }
-  await syncDiff(null, current, showResult);
+  if (!auth.currentUser) {
+    if (showResult) setStatus('請先登入 Google 再同步');
+    return false;
+  }
+
+  if (showResult) setStatus('正在同步 Life Archive 全部資料…', 'busy');
+  uploadBtn.disabled = true;
+  try {
+    const writingCount = await syncDiff(null, current, false);
+    const storyCount = await syncStoryOrganizer();
+    let timelineOk = true;
+    if (window.LifeArchiveTimelineCloud?.uploadSilent) {
+      timelineOk = await window.LifeArchiveTimelineCloud.uploadSilent();
+    }
+    if (!timelineOk) throw new Error('時間軸同步失敗');
+
+    cloudEnabled = true;
+    localStorage.setItem(CLOUD_FLAG,'1');
+    const timelineCount = Array.isArray(readJSON(TIMELINE_KEY, [])) ? readJSON(TIMELINE_KEY, []).length : 0;
+    const time = new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'});
+    setStatus(`全部資料已同步｜書稿 ${writingCount} 項變更・素材整理台 ${storyCount} 份・時間軸 ${timelineCount} 筆｜${time}`, 'ok');
+    return true;
+  } catch (err) {
+    console.error('Unified cloud sync failed', err);
+    setStatus(`整體同步失敗：${err.code || err.message || err}`);
+    return false;
+  } finally {
+    uploadBtn.disabled = false;
+  }
 }
 
 async function loadFromCollections() {
   const user = auth.currentUser;
   if (!user) return;
-  setStatus('正在讀取 Firestore collections…', 'busy');
+  setStatus('正在讀取 Firestore 全部資料…', 'busy');
+  downloadBtn.disabled = true;
   try {
-    const [chapterSnap, materialSnap, settingSnap] = await Promise.all([
+    const [chapterSnap, materialSnap, settingSnap, workspaceSnap, timelineSnap] = await Promise.all([
       getDocs(collection(db,'users',user.uid,'chapters')),
       getDocs(collection(db,'users',user.uid,'materials')),
-      getDoc(doc(db,'users',user.uid,'settings','book'))
+      getDoc(doc(db,'users',user.uid,'settings','book')),
+      getDoc(doc(db,'users',user.uid,'settings','workspace')),
+      getDocs(collection(db,'users',user.uid,'timeline'))
     ]);
 
-    if (chapterSnap.empty && materialSnap.empty && !settingSnap.exists()) {
+    if (chapterSnap.empty && materialSnap.empty && !settingSnap.exists() && !workspaceSnap.exists() && timelineSnap.empty) {
       setStatus('新的資料庫目前沒有資料；舊整包備份仍保留');
       return;
     }
@@ -194,7 +253,9 @@ async function loadFromCollections() {
     const current = readLocal() || {};
     const chapters = chapterSnap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.order??9999)-(b.order??9999)).map(({updatedAt,migratedAt,order,...x})=>x);
     const materials = materialSnap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.order??9999)-(b.order??9999)).map(({updatedAt,migratedAt,order,...x})=>x);
+    const timeline = timelineSnap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.order??9999)-(b.order??9999)).map(({updatedAt,order,...x})=>x);
     const settings = settingSnap.exists() ? settingSnap.data() : {};
+    const workspace = workspaceSnap.exists() ? workspaceSnap.data() : {};
     const restored = {
       ...current,
       title:settings.title ?? current.title ?? '',
@@ -213,14 +274,20 @@ async function loadFromCollections() {
       materials
     };
 
-    const ok = confirm(`將從 Firestore 載入 ${chapters.length} 章、${materials.length} 筆素材。\n\n這會取代這台裝置目前的文字工作室資料，但 Firestore 與舊整包備份都不會被刪除。\n\n確定載入？`);
+    const hasStory = workspace.storyOrganizer && typeof workspace.storyOrganizer === 'object';
+    const ok = confirm(`將從 Firestore 載入 ${chapters.length} 章、${materials.length} 筆素材、${timeline.length} 筆時間軸${hasStory?'，以及素材整理台草稿':''}。\n\n這會取代這台裝置目前對應的 Life Archive 資料，但 Firestore 與舊整包備份都不會被刪除。\n\n確定載入？`);
     if (!ok) { setStatus('已取消從資料庫載入'); return; }
+
     localStorage.setItem(LOCAL_KEY, JSON.stringify(restored));
+    if (hasStory) localStorage.setItem(STORY_KEY, JSON.stringify(workspace.storyOrganizer));
+    if (!timelineSnap.empty) localStorage.setItem(TIMELINE_KEY, JSON.stringify(timeline));
     localStorage.setItem(CLOUD_FLAG,'1');
     location.reload();
   } catch (err) {
     console.error('Firestore v2 load failed', err);
     setStatus(`資料庫讀取失敗：${err.code || err.message || err}`);
+  } finally {
+    downloadBtn.disabled = false;
   }
 }
 
@@ -246,25 +313,40 @@ onAuthStateChanged(auth, async user => {
   uploadBtn.hidden = false;
   downloadBtn.hidden = false;
   logoutBtn.hidden = false;
-  setStatus(`已登入 ${user.email || ''}｜Firestore collections 模式`, 'ok');
+  setStatus(`已登入 ${user.email || ''}｜完整雲端同步模式`, 'ok');
   lastSnapshot = readLocal();
-  if (cloudEnabled && lastSnapshot) await fullSync(false);
+  if (cloudEnabled && lastSnapshot) {
+    try {
+      await syncDiff(lastSnapshot, lastSnapshot, false);
+      await syncStoryOrganizer();
+    } catch (err) {
+      console.error('Background startup sync failed', err);
+    }
+  }
 });
 
 const nativeSetItem = Storage.prototype.setItem;
 Storage.prototype.setItem = function(key, value) {
   const previous = key === LOCAL_KEY ? lastSnapshot : null;
-  nativeSetItem.call(this, key, value);
+  const result = nativeSetItem.call(this, key, value);
+
   if (this === localStorage && key === LOCAL_KEY) {
     let current = null;
     try { current = JSON.parse(value); } catch {}
     if (current) {
       if (cloudEnabled && auth.currentUser && !syncing) {
         clearTimeout(syncTimer);
-        syncTimer = setTimeout(() => syncDiff(previous, current, false), 900);
+        syncTimer = setTimeout(() => syncDiff(previous, current, false).catch(err=>console.error(err)), 900);
       } else {
         lastSnapshot = JSON.parse(JSON.stringify(current));
       }
     }
   }
+
+  if (this === localStorage && key === STORY_KEY && cloudEnabled && auth.currentUser) {
+    clearTimeout(storySyncTimer);
+    storySyncTimer = setTimeout(() => syncStoryOrganizer().catch(err=>console.error('Story organizer autosync failed',err)), 900);
+  }
+
+  return result;
 };
