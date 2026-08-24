@@ -1,5 +1,5 @@
-const CACHE_NAME='life-archive-pwa-v59';
-const APP_SHELL=['./','./index.html','./manifest.webmanifest','./app-icon.svg','./favicon.svg','./firebase-cloud-sync.js','./mobile-auth.js','./sidebar-active.css','./book-positioning.js','./book-positioning-ui.js','./submission-materials-migration.js','./materials-editor.js','./materials-search-fix.js','./pilot-traits-tags.js','./timeline.js',
+const CACHE_NAME='life-archive-pwa-v60';
+const APP_SHELL=['./','./index.html','./manifest.webmanifest','./app-icon.svg','./favicon.svg','./firebase-cloud-sync.js','./cloud-sync-verifier.js','./mobile-auth.js','./sidebar-active.css','./book-positioning.js','./book-positioning-ui.js','./submission-materials-migration.js','./materials-editor.js','./materials-search-fix.js','./pilot-traits-tags.js','./timeline.js',
   './timeline-cloud-sync.js','./workflow-sidebar.js','./dashboard-workspace.js','./chapter-editor-plus.js','./story-extractor.js','./data-safety-center.js','./cloud-state-bridge.js','./references-editor.js','./psychology-lenses.js','./revision-editor.js','./memories.css','./memories.js','./text-memories-v2.js','./story-research-workbench.js','./i18n.js','./i18n-enhancements.js'];
 
 self.addEventListener('install',e=>{
@@ -38,6 +38,7 @@ async function prepareResponse(response, requestUrl){
     if(!body.includes('materials-search-fix.js')) body=body.replace('</body>','<script src="./materials-search-fix.js"></script></body>');
     if(!body.includes('pilot-traits-tags.js')) body=body.replace('</body>','<script src="./pilot-traits-tags.js"></script></body>');
     if(!body.includes('firebase-cloud-sync.js')) body=body.replace('</body>','<script type="module" src="./firebase-cloud-sync.js"></script></body>');
+    if(!body.includes('cloud-sync-verifier.js')) body=body.replace('</body>','<script type="module" src="./cloud-sync-verifier.js"></script></body>');
     if(!body.includes('book-positioning.js')) body=body.replace('</body>','<script type="module" src="./book-positioning.js"></script></body>');
     if(!body.includes('book-positioning-ui.js')) body=body.replace('</body>','<script type="module" src="./book-positioning-ui.js"></script></body>');
     if(!body.includes('memories.js')) body=body.replace('</body>','<script src="./memories.js"></script></body>');
