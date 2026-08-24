@@ -103,7 +103,15 @@ function readStoryOrganizer() {
 function safeDocData(obj) {
   return JSON.parse(JSON.stringify(obj || {}));
 }
-
+// 將舊素材轉換成新的 60／15／25 結構
+function normalizeMaterialForCloud(item = {}) {
+  return {
+    ...item,
+    story60: item.story60 ?? item.content ?? '',
+    research15: item.research15 ?? '',
+    insight25: item.insight25 ?? item.reflection ?? ''
+  };
+}
 function mapById(items=[]) {
   return new Map(items.map((item,index) => [String(item.id || `item-${index+1}`), { ...item, order:index }]));
 }
@@ -164,9 +172,21 @@ async function syncDiff(previous, current, showResult=false) {
     for (const id of beforeCh.keys()) {
       if (!afterCh.has(id)) operations.push(deleteDoc(doc(db,'users',user.uid,'chapters',id)));
     }
+
     for (const [id,item] of afterMat) {
       if (!beforeMat.has(id) || changed(beforeMat.get(id), item)) {
-        operations.push(setDoc(doc(db,'users',user.uid,'materials',id), {...safeDocData(item),updatedAt:serverTimestamp()}, {merge:true}));
+        const normalizedItem = normalizeMaterialForCloud(item);
+
+        operations.push(
+          setDoc(
+            doc(db,'users',user.uid,'materials',id),
+            {
+          ...safeDocData(normalizedItem),
+          updatedAt:serverTimestamp()
+            },
+            {merge:true}
+          )
+        );
       }
     }
     for (const id of beforeMat.keys()) {
