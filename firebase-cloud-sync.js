@@ -272,7 +272,16 @@ async function loadFromCollections() {
 
     const current = readLocal() || {};
     const chapters = chapterSnap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.order??9999)-(b.order??9999)).map(({updatedAt,migratedAt,order,...x})=>x);
-    const materials = materialSnap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.order??9999)-(b.order??9999)).map(({updatedAt,migratedAt,order,...x})=>x);
+   // const materials = materialSnap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.order??9999)-(b.order??9999)).map(({updatedAt,migratedAt,order,...x})=>x);
+    
+    const materials = materialSnap.docs
+  .map(d => normalizeMaterialForCloud({
+    id: d.id,
+    ...d.data()
+  }))
+  .sort((a,b) => (a.order ?? 9999) - (b.order ?? 9999))
+  .map(({updatedAt,migratedAt,order,...x}) => x);
+    
     const timeline = timelineSnap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.order??9999)-(b.order??9999)).map(({updatedAt,order,...x})=>x);
     const settings = settingSnap.exists() ? settingSnap.data() : {};
     const workspace = workspaceSnap.exists() ? workspaceSnap.data() : {};
