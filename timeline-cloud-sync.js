@@ -209,4 +209,8 @@ const attachObserver=new MutationObserver(()=>attachTimelineControls());
 attachObserver.observe(document.documentElement,{childList:true,subtree:true});
 attachTimelineControls();
 
-window.LifeArchiveTimelineCloud={upload:()=>uploadTimeline({ask:true}),download:()=>downloadTimeline({ask:true})};
+window.LifeArchiveTimelineCloud={
+  upload:()=>uploadTimeline({ask:true}),
+  uploadSilent:()=>uploadTimeline({ask:false}),
+  download:()=>downloadTimeline({ask:true})
+};
