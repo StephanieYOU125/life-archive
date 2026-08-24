@@ -1,18 +1,41 @@
 (()=>{
+  let schema=null;
+  import('./material-schema.js')
+    .then(module=>{schema=module.LifeArchiveMaterialSchema||module})
+    .catch(err=>console.warn('Material Schema v2 unavailable; using compatibility save path',err));
+
+  function applyField(item,field,value){
+    if(schema?.setMaterialField)return schema.setMaterialField(item,field,value);
+
+    // Compatibility fallback while the schema module is loading.
+    item[field]=value;
+    if(['story','story60','content'].includes(field)){
+      item.story=value;
+      item.story60=value;
+      item.content=value;
+    }
+    if(['research','research15'].includes(field)){
+      item.research=value;
+      item.research15=value;
+    }
+    if(['insight','insight25','reflection'].includes(field)){
+      item.insight=value;
+      item.insight25=value;
+      item.reflection=value;
+    }
+    item.schemaVersion=2;
+    return item;
+  }
+
   function saveFrameworkToOfficialState(row,field,value){
     const id=row?.dataset?.materialId;
     if(!id)return false;
     try{
-      // materials-editor.js keeps the authoritative in-memory materialState.
-      // Update that state directly so its localStorage guard cannot discard
-      // 60/15/25 edits made by materials-search-fix.js.
       if(typeof materialState==='undefined' || !Array.isArray(materialState))return false;
       const item=materialState.find(x=>String(x.id)===String(id));
       if(!item)return false;
 
-      item[field]=value;
-      if(field==='story60')item.content=value;
-      if(field==='insight25')item.reflection=value;
+      applyField(item,field,value);
 
       if(typeof persist==='function')persist();
 
