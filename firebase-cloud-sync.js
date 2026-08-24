@@ -15,6 +15,7 @@ const firebaseConfig = {
 
 const LOCAL_KEY = 'life-archive-writing-studio-v1';
 const CLOUD_FLAG = 'life-archive-cloud-enabled';
+const CLOUD_PANEL_COLLAPSED_KEY = 'life-archive-cloud-panel-collapsed';
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
@@ -26,9 +27,9 @@ let lastSnapshot = readLocal();
 
 const style = document.createElement('style');
 style.textContent = `
-#cloudPanel{position:fixed;right:18px;top:82px;z-index:50;width:min(350px,calc(100vw - 36px));background:#fffdf9;border:1px solid #ded5c9;border-radius:16px;padding:14px;box-shadow:0 12px 35px rgba(50,40,30,.12);font-family:-apple-system,BlinkMacSystemFont,"Noto Sans TC",sans-serif;color:#292521}
+#cloudPanel{position:fixed;right:18px;top:82px;z-index:50;width:min(350px,calc(100vw - 36px));background:#fffdf9;border:1px solid #ded5c9;border-radius:16px;padding:14px;box-shadow:0 12px 35px rgba(50,40,30,.12);font-family:-apple-system,BlinkMacSystemFont,"Noto Sans TC",sans-serif;color:#292521;transition:width .2s ease,padding .2s ease,box-shadow .2s ease}
 #cloudPanel .cloud-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
-#cloudPanel .cloud-title{font-weight:800}
+#cloudPanel .cloud-title{font-weight:800;white-space:nowrap}
 #cloudPanel .cloud-status{font-size:12px;color:#817970;line-height:1.55;margin:7px 0 10px;word-break:break-word}
 #cloudPanel .cloud-actions{display:flex;gap:7px;flex-wrap:wrap}
 #cloudPanel button{border:1px solid #ded5c9;background:#fffdf9;color:#292521;padding:8px 10px;border-radius:9px;cursor:pointer;font:inherit;font-size:12px}
@@ -37,14 +38,18 @@ style.textContent = `
 #cloudPanel .cloud-dot{width:9px;height:9px;border-radius:50%;background:#aaa199;display:inline-block;margin-right:6px}
 #cloudPanel .cloud-dot.ok{background:#39784b}
 #cloudPanel .cloud-dot.busy{background:#b88932}
-@media(max-width:850px){#cloudPanel{top:auto;bottom:16px;right:16px}}
+#cloudPanel #cloudToggle{width:34px;height:34px;padding:0;display:grid;place-items:center;font-size:17px;line-height:1;border-radius:10px;flex:0 0 auto}
+#cloudPanel.collapsed{width:min(285px,calc(100vw - 36px));padding:10px 12px;box-shadow:0 7px 22px rgba(50,40,30,.10)}
+#cloudPanel.collapsed .cloud-status{margin:5px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#cloudPanel.collapsed .cloud-actions,#cloudPanel.collapsed #timelineCloudStatus{display:none!important}
+@media(max-width:850px){#cloudPanel{top:auto;bottom:16px;right:16px}#cloudPanel.collapsed{width:min(270px,calc(100vw - 32px))}}
 `;
 document.head.appendChild(style);
 
 const panel = document.createElement('div');
 panel.id = 'cloudPanel';
 panel.innerHTML = `
-  <div class="cloud-head"><div class="cloud-title">☁ Life Archive 2.0</div><button id="cloudHide" aria-label="收合">×</button></div>
+  <div class="cloud-head"><div class="cloud-title">☁ Life Archive 2.0</div><button id="cloudToggle" type="button" aria-label="縮小同步面板" aria-expanded="true">⌃</button></div>
   <div id="cloudStatus" class="cloud-status"><span class="cloud-dot"></span>尚未登入</div>
   <div class="cloud-actions">
     <button id="cloudLogin" class="primary">Google 登入</button>
@@ -61,6 +66,18 @@ const loginBtn = el('cloudLogin');
 const uploadBtn = el('cloudUpload');
 const downloadBtn = el('cloudDownload');
 const logoutBtn = el('cloudLogout');
+const toggleBtn = el('cloudToggle');
+
+function setPanelCollapsed(collapsed, persist=true) {
+  panel.classList.toggle('collapsed', collapsed);
+  toggleBtn.textContent = collapsed ? '⌄' : '⌃';
+  toggleBtn.setAttribute('aria-expanded', String(!collapsed));
+  toggleBtn.setAttribute('aria-label', collapsed ? '展開同步面板' : '縮小同步面板');
+  if (persist) localStorage.setItem(CLOUD_PANEL_COLLAPSED_KEY, collapsed ? '1' : '0');
+}
+
+setPanelCollapsed(localStorage.getItem(CLOUD_PANEL_COLLAPSED_KEY) === '1', false);
+toggleBtn.onclick = () => setPanelCollapsed(!panel.classList.contains('collapsed'));
 
 function setStatus(text, mode='') {
   statusEl.innerHTML = `<span class="cloud-dot ${mode}"></span>${text}`;
@@ -155,7 +172,6 @@ async function fullSync(showResult=true) {
     if (showResult) setStatus('目前沒有本機書稿資料可同步');
     return;
   }
-  // null forces a full upsert, useful on first v2 activation or manual repair.
   await syncDiff(null, current, showResult);
 }
 
@@ -216,7 +232,6 @@ loginBtn.onclick = async () => {
 logoutBtn.onclick = () => signOut(auth);
 uploadBtn.onclick = () => fullSync(true);
 downloadBtn.onclick = loadFromCollections;
-el('cloudHide').onclick = () => panel.remove();
 
 onAuthStateChanged(auth, async user => {
   if (!user) {
@@ -236,7 +251,6 @@ onAuthStateChanged(auth, async user => {
   if (cloudEnabled && lastSnapshot) await fullSync(false);
 });
 
-// 原網站仍先寫 localStorage；這裡偵測前後差異，只把真正變動的文件同步到 Firestore。
 const nativeSetItem = Storage.prototype.setItem;
 Storage.prototype.setItem = function(key, value) {
   const previous = key === LOCAL_KEY ? lastSnapshot : null;
