@@ -98,10 +98,21 @@ function translateSystemOptions(root=document){
   });
 }
 
+function loadEnglishEnhancements(done){
+  if(window.LifeArchiveI18n?.locale!=='en'){done?.();return}
+  if(document.querySelector('script[data-life-archive-i18n-enhancements]')){done?.();return}
+  const script=document.createElement('script');
+  script.src='./i18n-enhancements.js';
+  script.dataset.lifeArchiveI18nEnhancements='1';
+  script.addEventListener('load',()=>{window.LifeArchiveI18n?.translate?.(document.body);translateSystemOptions(document);done?.()},{once:true});
+  document.body.appendChild(script);
+}
+
 function loadI18n(){
   const activate=()=>{
     window.LifeArchiveI18n?.translate?.(document.body);
     translateSystemOptions(document);
+    loadEnglishEnhancements(()=>window.LifeArchiveI18n?.translate?.(document.body));
     if(document.documentElement.dataset.i18nOptionWatch==='1')return;
     document.documentElement.dataset.i18nOptionWatch='1';
     const observer=new MutationObserver(records=>records.forEach(record=>record.addedNodes.forEach(node=>{
