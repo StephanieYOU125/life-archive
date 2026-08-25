@@ -98,44 +98,55 @@ function translateSystemOptions(root=document){
   });
 }
 
-function loadEnglishEnhancements(done){
-  if(window.LifeArchiveI18n?.locale!=='en'){done?.();return}
-  if(document.querySelector('script[data-life-archive-i18n-enhancements]')){done?.();return}
-  const script=document.createElement('script');
-  script.src='./i18n-enhancements.js';
-  script.dataset.lifeArchiveI18nEnhancements='1';
-  script.addEventListener('load',()=>{window.LifeArchiveI18n?.translate?.(document.body);translateSystemOptions(document);done?.()},{once:true});
-  document.body.appendChild(script);
-}
+//function loadEnglishEnhancements(done){
+  //if(window.LifeArchiveI18n?.locale!=='en'){done?.();return}
+ // if(document.querySelector('script[data-life-archive-i18n-enhancements]')){done?.();return}
+ // const script=document.createElement('script');
+ // script.src='./i18n-enhancements.js';
+ // script.dataset.lifeArchiveI18nEnhancements='1';
+  //script.addEventListener('load',()=>{window.LifeArchiveI18n?.translate?.(document.body);translateSystemOptions(document);done?.()},{once:true});
+  //document.body.appendChild(script);
+//}
 
-function loadI18n(){
-  const activate=()=>{
-    window.LifeArchiveI18n?.translate?.(document.body);
-    translateSystemOptions(document);
-    loadEnglishEnhancements(()=>window.LifeArchiveI18n?.translate?.(document.body));
-    if(document.documentElement.dataset.i18nOptionWatch==='1')return;
-    document.documentElement.dataset.i18nOptionWatch='1';
-    const observer=new MutationObserver(records=>records.forEach(record=>record.addedNodes.forEach(node=>{
-      if(node.nodeType===Node.ELEMENT_NODE)translateSystemOptions(node);
-    })));
-    observer.observe(document.body,{childList:true,subtree:true});
-  };
-  if(window.LifeArchiveI18n){activate();return}
-  const existing=document.querySelector('script[data-life-archive-i18n]');
-  if(existing){existing.addEventListener('load',activate,{once:true});return}
-  const script=document.createElement('script');
-  script.src='./i18n.js';
-  script.dataset.lifeArchiveI18n='1';
-  script.addEventListener('load',activate,{once:true});
-  document.body.appendChild(script);
-}
+//function loadI18n(){
+//  const activate=()=>{
+ //   window.LifeArchiveI18n?.translate?.(document.body);
+ //   translateSystemOptions(document);
+ //   loadEnglishEnhancements(()=>window.LifeArchiveI18n?.translate?.(document.body));
+  //  if(document.documentElement.dataset.i18nOptionWatch==='1')return;
+   // document.documentElement.dataset.i18nOptionWatch='1';
+   // const observer=new MutationObserver(records=>records.forEach(record=>record.addedNodes.forEach(node=>{
+   //   if(node.nodeType===Node.ELEMENT_NODE)translateSystemOptions(node);
+  //  })));
+  //  observer.observe(document.body,{childList:true,subtree:true});
+ // };
+  //if(window.LifeArchiveI18n){activate();return}
+  //const existing=document.querySelector('script[data-life-archive-i18n]');
+  //if(existing){existing.addEventListener('load',activate,{once:true});return}
+  //const script=document.createElement('script');
+  //script.src='./i18n.js';
+  //script.dataset.lifeArchiveI18n='1';
+  //script.addEventListener('load',activate,{once:true});
+  //document.body.appendChild(script);
+//}
 
 function init(){
   addStyles();
   renamePageHeadings();
   buildSidebar();
-  loadI18n();
+
+  if(window.LifeArchiveI18n){
+    window.LifeArchiveI18n.translate?.(document.body);
+    translateSystemOptions(document);
+  }
 }
 
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});
-else init();
+if(document.readyState === 'loading'){
+  document.addEventListener(
+    'DOMContentLoaded',
+    init,
+    { once:true }
+  );
+}else{
+  init();
+}
