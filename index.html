@@ -95,7 +95,7 @@ function loadChapter(){let c=S.chapters.find(x=>x.id===q('#chapterSelect').value
 q('#chapterSelect').onchange=loadChapter;['chapterTitle','chapterQuestion','chapterDraft'].forEach(id=>q('#'+id).oninput=()=>{let c=S.chapters.find(x=>x.id===q('#chapterSelect').value);if(c){c[id==='chapterTitle'?'title':id==='chapterQuestion'?'question':'draft']=q('#'+id).value;save()}});
 q('#triageSave').onclick=()=>{S.raw=q('#triageText').value;save();toast('初稿已儲存')};q('#triageMaterial').onclick=()=>{let t=q('#triageText').value.trim();if(!t)return toast('先貼上文字');S.materials.push({id:uid(),title:'從初稿建立的素材',content:t,stage:'靈感箱'});save();toast('已加入素材庫')};q('#sourceText').oninput=()=>{S.raw=q('#sourceText').value;save()};
 q('#addChapter').onclick=()=>{let t=prompt('章名？');if(t){S.chapters.push({id:uid(),title:t,question:'',draft:''});save();render()}};
-// 新增素材由 materials-search-fix.js 接手，直接建立可編輯空白素材，不使用 prompt。
+// 新增素材由 materials-editor.js 接手，直接建立可編輯空白素材，不使用 prompt。
 q('#addMaterial').onclick=()=>{};
 ['bookTitle','core','reader'].forEach(id=>q('#'+id).oninput=()=>{S[id==='bookTitle'?'title':id]=q('#'+id).value;save()});
 function backup(){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(S,null,2)],{type:'application/json'}));a.download='life-archive-writing-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)}
@@ -103,7 +103,6 @@ q('#backupTop').onclick=backup;q('#exportJson').onclick=backup;q('#importJson').
 })();
 </script>
 <script src="./materials-editor.js"></script>
-<script src="./materials-search-fix.js"></script>
 <script src="./materials-framework-save-fix.js"></script>
 <script src="./pilot-traits-tags.js"></script>
 
@@ -126,19 +125,10 @@ q('#backupTop').onclick=backup;q('#exportJson').onclick=backup;q('#importJson').
 <script src="./story-extractor.js"></script>
 
 <!-- 英文翻譯：固定只由 index.html 載入 -->
-<script
-  src="./i18n.js"
-  data-life-archive-i18n="1">
-</script>
-
-<script
-  src="./i18n-enhancements.js"
-  data-life-archive-i18n-enhancements="1">
-</script>
+<script src="./i18n.js" data-life-archive-i18n="1"></script>
+<script src="./i18n-enhancements.js" data-life-archive-i18n-enhancements="1"></script>
 
 <!-- 最後建立側邊欄，這時 i18n 已經存在 -->
 <script src="./workflow-sidebar.js"></script>
-
 </body>
 </html>
-  
