@@ -63,7 +63,29 @@ function normalizeMaterial(item={}){
   };
 }
 
+function syncFromStorage(){
+  const incoming=cloneMaterials(
+    readState().materials
+  ).map(normalizeMaterial);
 
+  if(!materialState.length){
+    materialState=incoming;
+    return;
+  }
+
+  const current=new Map(
+    materialState.map(x=>[x.id,x])
+  );
+
+  for(const item of incoming){
+    if(
+      !deletedIds.has(item.id) &&
+      !current.has(item.id)
+    ){
+      materialState.push(item);
+    }
+  }
+}
 
 function persist(){
   const state=readState();
@@ -375,7 +397,24 @@ function bindToolbar(){
 }
 
 function bindRows(){
-  document.querySelectorAll('[data-expand]').forEach(b=>b.addEventListener('click',()=>{const id=b.closest('[data-material-id]')?.dataset.materialId;expandedId=expandedId===id?null:id;renderEditor()}));
+  
+  document.querySelectorAll('#materialList [data-expand]').forEach(
+  b=>b.addEventListener('click',()=>{
+    const id=
+      b.closest('[data-material-id]')
+        ?.dataset.materialId;
+
+    expandedId=
+      expandedId===id
+        ? null
+        : id;
+
+    renderMaterialList();
+  })
+);
+  
+  
+  
   document.querySelectorAll('[data-material-field]').forEach(control=>{
     const updateState=()=>{
       const card=control.closest('[data-material-id]');
@@ -390,7 +429,10 @@ function bindRows(){
       control.addEventListener('change',()=>{
         const result=updateState();if(!result)return;
         clearTimeout(saveTimer);persist();if(result.status)result.status.textContent='✓ 已儲存';
-        if(['stage','chapterId','timelineId','experienceCategory'].includes(control.dataset.materialField))requestAnimationFrame(renderEditor);
+      
+
+        if(['stage','chapterId','timelineId','experienceCategory'].includes(control.dataset.materialField))
+  requestAnimationFrame(renderMaterialList);
       });
     }else{
       control.addEventListener('input',()=>{
@@ -400,7 +442,16 @@ function bindRows(){
       control.addEventListener('change',()=>{
         const result=updateState();if(!result)return;
         clearTimeout(saveTimer);persist();if(result.status)result.status.textContent='✓ 已儲存';
-        if(['tags','time'].includes(control.dataset.materialField))requestAnimationFrame(renderEditor);
+        
+        if(control.dataset.materialField==='time'){
+          requestAnimationFrame(renderMaterialList);
+}
+
+        if(control.dataset.materialField==='tags'){
+          requestAnimationFrame(renderEditor);
+}
+        
+        
       });
     }
   });
