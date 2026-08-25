@@ -10,6 +10,7 @@ let rendering=false;
 let saveTimer=null;
 let searchTimer=null;
 let searchComposing=false;
+let suppressCommittedInput=false;
 let viewMode=localStorage.getItem('life-archive-material-view')||'compact';
 let searchTerm='';
 let stageFilter='全部';
@@ -225,10 +226,28 @@ function scheduleSearch(value){
 }
 function bindToolbar(){
   const search=document.getElementById('materialSearch');
-  search?.addEventListener('compositionstart',()=>{searchComposing=true});
-  search?.addEventListener('compositionend',e=>{searchComposing=false;scheduleSearch(e.target.value)});
-  search?.addEventListener('input',e=>{if(searchComposing||e.isComposing)return;scheduleSearch(e.target.value)});
-  search?.addEventListener('search',e=>scheduleSearch(e.target.value));
+  search?.addEventListener('compositionstart',()=>{
+    searchComposing=true;
+    suppressCommittedInput=false;
+  });
+  search?.addEventListener('compositionend',e=>{
+    searchComposing=false;
+    suppressCommittedInput=true;
+    scheduleSearch(e.target.value);
+    setTimeout(()=>{suppressCommittedInput=false},80);
+  });
+  search?.addEventListener('input',e=>{
+    if(searchComposing||e.isComposing)return;
+    if(suppressCommittedInput){
+      suppressCommittedInput=false;
+      return;
+    }
+    scheduleSearch(e.target.value);
+  });
+  search?.addEventListener('search',e=>{
+    suppressCommittedInput=false;
+    scheduleSearch(e.target.value);
+  });
   document.getElementById('materialCategoryFilter')?.addEventListener('change',e=>{categoryFilter=e.target.value;renderMaterialList()});
   document.getElementById('materialStageFilter')?.addEventListener('change',e=>{stageFilter=e.target.value;renderMaterialList()});
   document.getElementById('materialTagFilter')?.addEventListener('change',e=>{tagFilter=e.target.value;renderMaterialList()});
