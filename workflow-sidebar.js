@@ -14,7 +14,7 @@ const LABELS={
 };
 
 const SYSTEM_OPTION_EN={
-  '全部':'All','國小':'Elementary School','國中':'Junior High School','高中':'Senior High School','大學':'University','研究所':'Graduate School',
+  '全部':'All',  '童年':'Childhood','國小':'Elementary School','國中':'Junior High School','高中':'Senior High School','大學':'University','研究所':'Graduate School',
   '工作':'Work','旅行':'Travel','交換':'Exchange','運動':'Sports','娛樂':'Leisure','挑戰':'Challenge','其他':'Other',
   '靈感箱':'Idea Box','發展中':'Developing','可寫作':'Ready to Write','已放入章節':'Added to Chapter',
   '精確日期':'Exact Date','年月':'Year / Month','年份':'Year','約略時間':'Approximate Time','待確認':'Needs Review',
