@@ -119,17 +119,17 @@
   document.head.appendChild(style);
 
   polish(document.body);
-  const observer=new MutationObserver(records=>{
-    records.forEach(record=>record.addedNodes.forEach(node=>{
-      if(node.nodeType===Node.TEXT_NODE){
-        const parent=node.parentElement;
-        if(!parent||parent.closest('script,style,textarea,code,pre,[contenteditable="true"]'))return;
-        const next=polishText(node.nodeValue);
-        if(next!==node.nodeValue)node.nodeValue=next;
-      }else if(node.nodeType===Node.ELEMENT_NODE){
-        polish(node);
-      }
-    }));
-  });
-  if(document.body)observer.observe(document.body,{childList:true,subtree:true});
-})();
+  //const observer=new MutationObserver(records=>{
+   // records.forEach(record=>record.addedNodes.forEach(node=>{
+  //    if(node.nodeType===Node.TEXT_NODE){
+  //      const parent=node.parentElement;
+  //      if(!parent||parent.closest('script,style,textarea,code,pre,[contenteditable="true"]'))return;
+ //       const next=polishText(node.nodeValue);
+ //       if(next!==node.nodeValue)node.nodeValue=next;
+ //     }else if(node.nodeType===Node.ELEMENT_NODE){
+ //       polish(node);
+ //     }
+ //   }));
+ // });
+ // if(document.body)observer.observe(document.body,{childList:true,subtree:true});
+//})();
