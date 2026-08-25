@@ -1,7 +1,7 @@
 const STORAGE_KEY='life-archive-writing-studio-v1';
 const STAGES=['靈感箱','發展中','可寫作','已放入章節'];
 const TIME_PRECISIONS=['精確日期','年月','年份','約略時間','待確認'];
-const EXPERIENCE_CATEGORIES=['國小','國中','高中','大學','研究所','工作','旅行','交換','運動','娛樂','挑戰','其他'];
+const EXPERIENCE_CATEGORIES=['童年', '國小','國中','高中','大學','研究所','工作','旅行','交換','運動','娛樂','挑戰','其他'];
 const nativeSetItem=Storage.prototype.setItem;
 
 let materialState=[];
