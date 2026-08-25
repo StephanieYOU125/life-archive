@@ -1,5 +1,5 @@
-const CACHE_NAME='life-archive-pwa-v64';
-const APP_SHELL=['./','./index.html','./manifest.webmanifest','./app-icon.svg','./favicon.svg','./firebase-cloud-sync.js','./cloud-sync-verifier.js','./mobile-auth.js','./sidebar-active.css','./book-positioning.js','./book-positioning-ui.js','./submission-materials-migration.js','./materials-editor.js','./materials-search-fix.js','./materials-framework-save-fix.js','./pilot-traits-tags.js','./timeline.js',
+const CACHE_NAME='life-archive-pwa-v65';
+const APP_SHELL=['./','./index.html','./manifest.webmanifest','./app-icon.svg','./favicon.svg','./firebase-cloud-sync.js','./cloud-sync-verifier.js','./mobile-auth.js','./sidebar-active.css','./book-positioning.js','./book-positioning-ui.js','./submission-materials-migration.js','./materials-editor.js','./materials-framework-save-fix.js','./pilot-traits-tags.js','./timeline.js',
   './timeline-cloud-sync.js','./workflow-sidebar.js','./dashboard-workspace.js','./chapter-editor-plus.js','./story-extractor.js','./data-safety-center.js','./cloud-state-bridge.js','./references-editor.js','./psychology-lenses.js','./revision-editor.js','./memories.css','./memories.js','./text-memories-v2.js','./story-research-workbench.js','./i18n.js','./i18n-enhancements.js'];
 
 self.addEventListener('install',e=>{
@@ -32,10 +32,8 @@ async function prepareResponse(response, requestUrl){
     body=await response.text();
     if(!body.includes('sidebar-active.css')) body=body.replace('</head>','<link rel="stylesheet" href="./sidebar-active.css"></head>');
     if(!body.includes('memories.css')) body=body.replace('</head>','<link rel="stylesheet" href="./memories.css"></head>');
-   // if(!body.includes('workflow-sidebar.js')) body=body.replace('</body>','<script src="./workflow-sidebar.js"></script></body>');
     if(!body.includes('dashboard-workspace.js')) body=body.replace('</body>','<script src="./dashboard-workspace.js"></script></body>');
     if(!body.includes('chapter-editor-plus.js')) body=body.replace('</body>','<script src="./chapter-editor-plus.js"></script></body>');
-    if(!body.includes('materials-search-fix.js')) body=body.replace('</body>','<script src="./materials-search-fix.js"></script></body>');
     if(!body.includes('materials-framework-save-fix.js')) body=body.replace('</body>','<script src="./materials-framework-save-fix.js"></script></body>');
     if(!body.includes('pilot-traits-tags.js')) body=body.replace('</body>','<script src="./pilot-traits-tags.js"></script></body>');
     if(!body.includes('firebase-cloud-sync.js')) body=body.replace('</body>','<script type="module" src="./firebase-cloud-sync.js"></script></body>');
@@ -50,8 +48,6 @@ async function prepareResponse(response, requestUrl){
     if(!body.includes('revision-editor.js')) body=body.replace('</body>','<script src="./revision-editor.js"></script></body>');
     if(!body.includes('mobile-auth.js')) body=body.replace('</body>','<script type="module" src="./mobile-auth.js"></script></body>');
     if(!body.includes('data-safety-center.js')) body=body.replace('</body>','<script type="module" src="./data-safety-center.js"></script></body>');
-    //if(!body.includes('i18n.js')) body=body.replace('</body>','<script src="./i18n.js" data-life-archive-i18n="1"></script></body>');
-   // if(!body.includes('i18n-enhancements.js')) body=body.replace('</body>','<script src="./i18n-enhancements.js" data-life-archive-i18n-enhancements="1"></script></body>');
   } else if(isCloudModule && (type.includes('javascript') || type.includes('text/plain') || type==='')) {
     body=await response.text();
   } else {
