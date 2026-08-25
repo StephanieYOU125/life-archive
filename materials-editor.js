@@ -7,8 +7,14 @@ const nativeSetItem=Storage.prototype.setItem;
 let materialState=[];
 let deletedIds=new Set();
 let rendering=false;
+
 let saveTimer=null;
+let searchTimer=null;
+let searchComposing=false;
+let suppressCommittedInput=false;
+
 let viewMode=localStorage.getItem('life-archive-material-view')||'compact';
+
 let searchTerm='';
 let stageFilter='全部';
 let tagFilter='全部';
@@ -18,13 +24,47 @@ let expandedId=null;
 
 function readState(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}')||{}}catch{return {}}}
 function cloneMaterials(list){return Array.isArray(list)?list.map(x=>({...x})):[]}
-function normalizeMaterial(item){return {...item,time:item.time||'',timePrecision:item.timePrecision||'待確認',tags:item.tags||'',chapterId:item.chapterId||'',timelineId:item.timelineId||'',stage:item.stage||'靈感箱',experienceCategory:item.experienceCategory||'其他',evidence:item.evidence||'',feelings:item.feelings||'',reflection:item.reflection||''}}
-function syncFromStorage(){
-  const incoming=cloneMaterials(readState().materials).map(normalizeMaterial);
-  if(!materialState.length){materialState=incoming;return}
-  const current=new Map(materialState.map(x=>[x.id,x]));
-  for(const item of incoming){if(!deletedIds.has(item.id)&&!current.has(item.id))materialState.push(item)}
+
+function normalizeMaterial(item={}){
+  const story60=
+    item.story60 ??
+    item.content ??
+    '';
+
+  const research15=
+    item.research15 ??
+    '';
+
+  const insight25=
+    item.insight25 ??
+    item.reflection ??
+    '';
+
+  return {
+    ...item,
+
+    time:item.time||'',
+    timePrecision:item.timePrecision||'待確認',
+    tags:item.tags||'',
+    chapterId:item.chapterId||'',
+    timelineId:item.timelineId||'',
+    stage:item.stage||'靈感箱',
+    experienceCategory:item.experienceCategory||'其他',
+
+    evidence:item.evidence||'',
+    feelings:item.feelings||'',
+
+    content:item.content||story60,
+    reflection:item.reflection||insight25,
+
+    story60,
+    research15,
+    insight25
+  };
 }
+
+
+
 function persist(){
   const state=readState();
   state.materials=materialState.filter(x=>!deletedIds.has(x.id)).map(x=>({...x}));
@@ -48,6 +88,16 @@ Storage.prototype.setItem=function(key,value){
 
 function esc(value=''){return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function tagsOf(item){return String(item.tags||'').split(/[,，#\s]+/).map(x=>x.trim()).filter(Boolean)}
+
+function searchTerms(value){
+  return String(value||'')
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean);
+}
+
+
 function timeKey(value){
   const s=String(value||'').trim();
   const m=s.match(/(19|20)\d{2}(?:[\/\-.年](\d{1,2}))?(?:[\/\-.月](\d{1,2}))?/);
@@ -70,20 +120,71 @@ function seq(index){return String(index+1).padStart(3,'0')}
 
 function filteredMaterials(){
   let rows=materialState.filter(x=>!deletedIds.has(x.id));
-  if(searchTerm.trim()){
-    const q=searchTerm.trim().toLowerCase();
-    rows=rows.filter(x=>[x.title,x.content,x.evidence,x.feelings,x.reflection,x.time,x.tags,x.experienceCategory,chapterTitle(x),timelineTitle(x),x.stage].join(' ').toLowerCase().includes(q));
+
+  const terms=searchTerms(searchTerm);
+
+  if(terms.length){
+    rows=rows.filter(x=>{
+      const haystack=[
+        x.title,
+        x.content,
+        x.story60,
+        x.research15,
+        x.insight25,
+        x.evidence,
+        x.feelings,
+        x.reflection,
+        x.time,
+        x.tags,
+        x.experienceCategory,
+        chapterTitle(x),
+        timelineTitle(x),
+        x.stage
+      ].join(' ').toLowerCase();
+
+      return terms.every(term=>haystack.includes(term));
+    });
   }
-  if(stageFilter!=='全部')rows=rows.filter(x=>x.stage===stageFilter);
-  if(tagFilter!=='全部')rows=rows.filter(x=>tagsOf(x).includes(tagFilter));
-  if(categoryFilter!=='全部')rows=rows.filter(x=>x.experienceCategory===categoryFilter);
+
+  if(stageFilter!=='全部'){
+    rows=rows.filter(x=>x.stage===stageFilter);
+  }
+
+  if(tagFilter!=='全部'){
+    rows=rows.filter(x=>tagsOf(x).includes(tagFilter));
+  }
+
+  if(categoryFilter!=='全部'){
+    rows=rows.filter(x=>x.experienceCategory===categoryFilter);
+  }
+
   rows=[...rows];
-  if(sortMode==='time-asc')rows.sort((a,b)=>timeKey(a.time)-timeKey(b.time));
-  if(sortMode==='time-desc')rows.sort((a,b)=>timeKey(b.time)-timeKey(a.time));
-  if(sortMode==='status')rows.sort((a,b)=>STAGES.indexOf(a.stage)-STAGES.indexOf(b.stage));
-  if(sortMode==='title')rows.sort((a,b)=>String(a.title||'').localeCompare(String(b.title||''),'zh-Hant'));
+
+  if(sortMode==='time-asc'){
+    rows.sort((a,b)=>timeKey(a.time)-timeKey(b.time));
+  }
+
+  if(sortMode==='time-desc'){
+    rows.sort((a,b)=>timeKey(b.time)-timeKey(a.time));
+  }
+
+  if(sortMode==='status'){
+    rows.sort((a,b)=>STAGES.indexOf(a.stage)-STAGES.indexOf(b.stage));
+  }
+
+  if(sortMode==='title'){
+    rows.sort((a,b)=>
+      String(a.title||'').localeCompare(
+        String(b.title||''),
+        'zh-Hant'
+      )
+    );
+  }
+
   return rows;
 }
+
+
 function allTags(){return [...new Set(materialState.flatMap(tagsOf))].sort((a,b)=>a.localeCompare(b,'zh-Hant'))}
 
 function toolbarHtml(){
@@ -142,21 +243,137 @@ function renderEditor(){
   const container=document.getElementById('materialsWorkspace')||document.createElement('div');
   if(!container.id){container.id='materialsWorkspace';list.parentNode.insertBefore(container,list);container.appendChild(list)}
   let toolbar=document.getElementById('materialsToolbarWrap');if(!toolbar){toolbar=document.createElement('div');toolbar.id='materialsToolbarWrap';container.insertBefore(toolbar,list)}
+  
+
   toolbar.innerHTML=toolbarHtml();
-  const rows=filteredMaterials();
-  list.className=viewMode==='compact'?'material-library compact':'material-library cards';
-  list.innerHTML=rows.length?(viewMode==='compact'?rows.map(compactRow).join(''):rows.map(card).join('')):'<div class="empty">沒有符合條件的素材。</div>';
-  bindToolbar();bindRows();rendering=false;
+
+  bindToolbar();
+  renderMaterialList();
+
+  window.LifeArchiveI18n?.translate?.(toolbar);
+
+  rendering=false;  
+  
 }
 
-function bindToolbar(){
-  document.getElementById('materialSearch')?.addEventListener('input',e=>{searchTerm=e.target.value;renderEditor()});
-  document.getElementById('materialCategoryFilter')?.addEventListener('change',e=>{categoryFilter=e.target.value;renderEditor()});
-  document.getElementById('materialStageFilter')?.addEventListener('change',e=>{stageFilter=e.target.value;renderEditor()});
-  document.getElementById('materialTagFilter')?.addEventListener('change',e=>{tagFilter=e.target.value;renderEditor()});
-  document.getElementById('materialSort')?.addEventListener('change',e=>{sortMode=e.target.value;renderEditor()});
-  document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>{viewMode=b.dataset.view;localStorage.setItem('life-archive-material-view',viewMode);renderEditor()}));
+function renderMaterialList(){
+  const list=document.getElementById('materialList');
+
+  if(!list)return;
+
+  const rows=filteredMaterials();
+
+  list.className=
+    viewMode==='compact'
+      ? 'material-library compact'
+      : 'material-library cards';
+
+  list.innerHTML=rows.length
+    ? (
+        viewMode==='compact'
+          ? rows.map(compactRow).join('')
+          : rows.map(card).join('')
+      )
+    : '<div class="empty">沒有符合條件的素材。</div>';
+
+  bindRows();
+
+  window.LifeArchiveI18n?.translate?.(list);
 }
+
+function scheduleSearch(value){
+  searchTerm=String(value||'');
+
+  clearTimeout(searchTimer);
+
+  searchTimer=setTimeout(
+    renderMaterialList,
+    120
+  );
+}
+
+
+function bindToolbar(){
+  const search=document.getElementById('materialSearch');
+
+  search?.addEventListener('compositionstart',()=>{
+    searchComposing=true;
+    suppressCommittedInput=false;
+  });
+
+  search?.addEventListener('compositionend',e=>{
+    searchComposing=false;
+    suppressCommittedInput=true;
+
+    scheduleSearch(e.target.value);
+
+    setTimeout(()=>{
+      suppressCommittedInput=false;
+    },80);
+  });
+
+  search?.addEventListener('input',e=>{
+    if(searchComposing || e.isComposing){
+      return;
+    }
+
+    if(suppressCommittedInput){
+      suppressCommittedInput=false;
+      return;
+    }
+
+    scheduleSearch(e.target.value);
+  });
+
+  search?.addEventListener('search',e=>{
+    suppressCommittedInput=false;
+    scheduleSearch(e.target.value);
+  });
+
+  document
+    .getElementById('materialCategoryFilter')
+    ?.addEventListener('change',e=>{
+      categoryFilter=e.target.value;
+      renderMaterialList();
+    });
+
+  document
+    .getElementById('materialStageFilter')
+    ?.addEventListener('change',e=>{
+      stageFilter=e.target.value;
+      renderMaterialList();
+    });
+
+  document
+    .getElementById('materialTagFilter')
+    ?.addEventListener('change',e=>{
+      tagFilter=e.target.value;
+      renderMaterialList();
+    });
+
+  document
+    .getElementById('materialSort')
+    ?.addEventListener('change',e=>{
+      sortMode=e.target.value;
+      renderMaterialList();
+    });
+
+  document
+    .querySelectorAll('[data-view]')
+    .forEach(button=>{
+      button.addEventListener('click',()=>{
+        viewMode=button.dataset.view;
+
+        localStorage.setItem(
+          'life-archive-material-view',
+          viewMode
+        );
+
+        renderEditor();
+      });
+    });
+}
+
 function bindRows(){
   document.querySelectorAll('[data-expand]').forEach(b=>b.addEventListener('click',()=>{const id=b.closest('[data-material-id]')?.dataset.materialId;expandedId=expandedId===id?null:id;renderEditor()}));
   document.querySelectorAll('[data-material-field]').forEach(control=>{
