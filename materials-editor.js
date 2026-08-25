@@ -471,8 +471,11 @@ function addStyles(){
   .material-library.cards{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.material-editor-card{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:14px;min-width:0}.material-card-summary{display:flex;justify-content:space-between;gap:12px;align-items:start;margin-bottom:8px}.material-card-summary h3{font-size:15px;margin:5px 0 0}.material-card-meta{display:flex;gap:7px;align-items:center}.material-tags{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px}.material-editor-card .material-mini-grid{grid-template-columns:1fr 1fr}.material-editor-card .material-story-grid{grid-template-columns:1fr}.material-editor-card .material-field textarea{min-height:140px}
   @media(max-width:1050px){.material-compact-main{grid-template-columns:42px 90px 65px minmax(220px,2fr) 80px 20px}.material-compact-tags{display:none}.material-library.cards{grid-template-columns:repeat(2,minmax(0,1fr))}.material-story-grid{grid-template-columns:1fr}}
   @media(max-width:850px){#v-materials{padding-left:12px;padding-right:12px}.materials-toolbar{display:grid;grid-template-columns:1fr 1fr}.materials-search{grid-column:1/-1;min-width:0}.materials-view-toggle{grid-column:1/-1}.materials-view-toggle button{flex:1}.material-compact-main{grid-template-columns:34px 72px 58px 1fr 20px;gap:6px;padding:10px}.material-stage,.material-compact-tags{display:none}.material-compact-title small{max-width:100%}.material-mini-grid{grid-template-columns:1fr 1fr}.material-library.cards{grid-template-columns:1fr}.material-story-grid{grid-template-columns:1fr}.material-field input,.material-field textarea,.material-field select{font-size:16px}.material-editor-footer{flex-wrap:wrap}.material-source{width:100%;order:3}}
+
 /* 浮動新增素材按鈕 */
 #addMaterial{
+  display:none;
+
   position:fixed;
   right:28px;
   bottom:28px;
@@ -485,6 +488,22 @@ function addStyles(){
     0 10px 28px rgba(0,0,0,.16);
 
   white-space:nowrap;
+
+  transition:
+    transform .18s ease,
+    box-shadow .18s ease;
+}
+
+/* 只有素材庫頁面開啟時才顯示 */
+#v-materials.active #addMaterial{
+  display:block;
+}
+
+#addMaterial:hover{
+  transform:translateY(-2px);
+
+  box-shadow:
+    0 14px 34px rgba(0,0,0,.2);
 }
 
 @media(max-width:850px){
@@ -495,14 +514,40 @@ function addStyles(){
   }
 }
 
+
+
   
   `;document.head.appendChild(style);
 }
 
 function init(){
-  const list=document.getElementById('materialList');if(!list)return;
-  materialState=cloneMaterials(readState().materials).map(normalizeMaterial);addStyles();renderEditor();
-  document.querySelector('#nav [data-v="materials"]')?.addEventListener('click',()=>setTimeout(renderEditor,0));
-  const addButton=document.getElementById('addMaterial');addButton?.addEventListener('click',()=>setTimeout(()=>{syncFromStorage();const newest=materialState[materialState.length-1];if(newest)expandedId=newest.id;renderEditor()},60));
+
+  const list=document.getElementById('materialList');
+
+  if(!list)return;
+
+  materialState=
+    cloneMaterials(
+      readState().materials
+    ).map(normalizeMaterial);
+
+  addStyles();
+
+  renderEditor();
+
+  document
+    .querySelector('#nav [data-v="materials"]')
+    ?.addEventListener('click',()=>{
+      setTimeout(renderEditor,0);
+    });
+
+  document
+    .getElementById('addMaterial')
+    ?.addEventListener('click',event=>{
+      event.preventDefault();
+      createBlankMaterial();
+    });
 }
+
+
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
