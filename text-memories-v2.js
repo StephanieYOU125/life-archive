@@ -120,7 +120,17 @@ function renameNavigation(){
   document.querySelectorAll('#nav [data-v="memories"]').forEach(b=>{b.textContent='▧ 純文字回憶'});
 }
 
-function init(){addStyles();buildPage();renameNavigation();const nav=document.getElementById('nav');if(nav)new MutationObserver(renameNavigation).observe(nav,{childList:true,subtree:true});window.lifeArchiveMemories={getItems:()=>items.map(x=>({...x})),render,showView:v=>window.LifeArchiveNavigate?.(v)};}
+//function init(){addStyles();buildPage();renameNavigation();const nav=document.getElementById('nav');if(nav)new MutationObserver(renameNavigation).observe(nav,{childList:true,subtree:true});window.lifeArchiveMemories={getItems:()=>items.map(x=>({...x})),render,showView:v=>window.LifeArchiveNavigate?.(v)};}
+function init(){
+  addStyles();
+  buildPage();
+  renameNavigation();
 
+  window.lifeArchiveMemories={
+    getItems:()=>items.map(x=>({...x})),
+    render,
+    showView:v=>window.LifeArchiveNavigate?.(v)
+  };
+}
 onAuthStateChanged(auth,user=>{cloudUser=user;if(user){status(localStorage.getItem(CLOUD_FLAG)==='1'?'☁ 已登入，可自動同步':'☁ 已登入；按「立即同步」啟用','ok')}else status('尚未登入；目前只儲存在本機')});
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(init,80),{once:true});else setTimeout(init,80);
