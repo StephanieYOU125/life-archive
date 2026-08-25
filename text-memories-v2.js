@@ -116,8 +116,24 @@ function bindPage(){
   document.getElementById('tmExport')?.addEventListener('click',()=>{const u=URL.createObjectURL(new Blob([JSON.stringify({format:'life-archive-text-memories',version:1,memories:items},null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=u;a.download='life-archive-text-memories-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(u),500)});
 }
 
+//function renameNavigation(){
+// document.querySelectorAll('#nav [data-v="memories"]').forEach(b=>{b.textContent='▧ 純文字回憶'});
+//}
 function renameNavigation(){
-  document.querySelectorAll('#nav [data-v="memories"]').forEach(b=>{b.textContent='▧ 純文字回憶'});
+  const isEnglish =
+    window.LifeArchiveI18n?.locale === 'en';
+
+  const label = isEnglish
+    ? '▧ Text Memories'
+    : '▧ 純文字回憶';
+
+  document
+    .querySelectorAll('#nav [data-v="memories"]')
+    .forEach(button=>{
+      if(button.textContent !== label){
+        button.textContent = label;
+      }
+    });
 }
 
 //function init(){addStyles();buildPage();renameNavigation();const nav=document.getElementById('nav');if(nav)new MutationObserver(renameNavigation).observe(nav,{childList:true,subtree:true});window.lifeArchiveMemories={getItems:()=>items.map(x=>({...x})),render,showView:v=>window.LifeArchiveNavigate?.(v)};}
