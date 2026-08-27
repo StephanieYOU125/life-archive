@@ -99,15 +99,14 @@ function loadChapter(){let c=S.chapters.find(x=>x.id===q('#chapterSelect').value
 q('#chapterSelect').onchange=loadChapter;['chapterTitle','chapterQuestion','chapterDraft'].forEach(id=>q('#'+id).oninput=()=>{let c=S.chapters.find(x=>x.id===q('#chapterSelect').value);if(c){c[id==='chapterTitle'?'title':id==='chapterQuestion'?'question':'draft']=q('#'+id).value;save()}});
 q('#triageSave').onclick=()=>{S.raw=q('#triageText').value;save();toast('初稿已儲存')};q('#triageMaterial').onclick=()=>{let t=q('#triageText').value.trim();if(!t)return toast('先貼上文字');S.materials.push({id:uid(),title:'從初稿建立的素材',content:t,stage:'靈感箱'});save();toast('已加入素材庫')};q('#sourceText').oninput=()=>{S.raw=q('#sourceText').value;save()};
 q('#addChapter').onclick=()=>{let t=prompt('章名？');if(t){S.chapters.push({id:uid(),title:t,question:'',draft:''});save();render()}};
-// 新增素材由 materials-search-fix.js 接手，直接建立可編輯空白素材，不使用 prompt。
-q('#addMaterial').onclick=()=>{};
+
 ['bookTitle','core','reader'].forEach(id=>q('#'+id).oninput=()=>{S[id==='bookTitle'?'title':id]=q('#'+id).value;save()});
 function backup(){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(S,null,2)],{type:'application/json'}));a.download='life-archive-writing-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)}
 q('#backupTop').onclick=backup;q('#exportJson').onclick=backup;q('#importJson').onchange=async e=>{try{let x=JSON.parse(await e.target.files[0].text());if(!x.chapters)throw 0;if(confirm('匯入會取代目前文字工作室資料，確定？')){S=x;save();render();toast('已匯入')}}catch{alert('備份格式不正確')}};q('#exportTxt').onclick=()=>{let txt=S.chapters.map((c,i)=>`第 ${i+1} 章 ${c.title}\n\n${c.draft||''}`).join('\n\n');let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type:'text/plain'}));a.download=(S.title||'書稿')+'.txt';a.click()};render();if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js').catch(console.warn));
 })();
 </script>
 <script src="./materials-editor.js"></script>
-<script src="./materials-search-fix.js"></script>
+
 <script src="./materials-framework-save-fix.js"></script>
 <script src="./pilot-traits-tags.js"></script>
 
