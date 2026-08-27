@@ -10,10 +10,14 @@ function state(){
   try{return JSON.parse(localStorage.getItem('life-archive-writing-studio-v1')||'{}')||{}}catch{return {}}
 }
 
+function newId(){
+  return globalThis.crypto?.randomUUID?.() || Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+}
+
 function normalize(raw={}){
   return {
     ...raw,
-    id:raw.id||((crypto.randomUUID&&crypto.randomUUID())||Date.now().toString(36)),
+    id:raw.id||newId(),
     sourceType:raw.sourceType||'書籍',
     name:raw.name||raw.sourceName||'',
     author:raw.author||'',
@@ -68,38 +72,60 @@ function addStyles(){
   document.head.appendChild(style);
 }
 
+function bindShellEvents(section){
+  if(section.dataset.referencesEvents==='1')return;
+  section.dataset.referencesEvents='1';
+
+  section.addEventListener('click',event=>{
+    const addButton=event.target.closest('#addRef');
+    if(addButton && section.contains(addButton)){
+      event.preventDefault();
+      addReference();
+      return;
+    }
+
+    const demoButton=event.target.closest('#refDemoBtn');
+    if(demoButton && section.contains(demoButton)){
+      event.preventDefault();
+      document.getElementById('refDemo')?.classList.toggle('show');
+    }
+  });
+}
+
 function shell(){
   const section=document.getElementById('v-references');
   if(!section)return false;
-  if(section.dataset.referencesV2==='1')return true;
-  section.dataset.referencesV2='1';
-  section.innerHTML=`
-    <div class="ref-guide">
-      <span class="eyebrow" style="color:#e6c8c1">REFERENCE → MY STORY → NEW UNDERSTANDING</span>
-      <h1>引用與借鏡</h1>
-      <p>這裡不是先蒐集一大堆參考文獻，而是保存「某個外部觀點如何幫我重新理解自己的故事」。先用自己的話記下想法；真的要放進書裡時，再回頭確認原文、頁碼與脈絡。</p>
-      <div class="ref-steps">
-        <div class="ref-step"><b>1｜我看到了什麼？</b><span>先記來源，不必一次把書目格式整理完。</span></div>
-        <div class="ref-step"><b>2｜它真正說了什麼？</b><span>用自己的話寫核心觀點，不要只貼一大段原文。</span></div>
-        <div class="ref-step"><b>3｜它讓我想到什麼？</b><span>連回自己的事件、選擇、感受或既有觀念。</span></div>
-        <div class="ref-step"><b>4｜我會怎麼用？</b><span>決定它是命名、對照、延伸，還是放進某一章。</span></div>
+
+  if(section.dataset.referencesV2!=='1'){
+    section.dataset.referencesV2='1';
+    section.innerHTML=`
+      <div class="ref-guide">
+        <span class="eyebrow" style="color:#e6c8c1">REFERENCE → MY STORY → NEW UNDERSTANDING</span>
+        <h1>引用與借鏡</h1>
+        <p>這裡不是先蒐集一大堆參考文獻，而是保存「某個外部觀點如何幫我重新理解自己的故事」。先用自己的話記下想法；真的要放進書裡時，再回頭確認原文、頁碼與脈絡。</p>
+        <div class="ref-steps">
+          <div class="ref-step"><b>1｜我看到了什麼？</b><span>先記來源，不必一次把書目格式整理完。</span></div>
+          <div class="ref-step"><b>2｜它真正說了什麼？</b><span>用自己的話寫核心觀點，不要只貼一大段原文。</span></div>
+          <div class="ref-step"><b>3｜它讓我想到什麼？</b><span>連回自己的事件、選擇、感受或既有觀念。</span></div>
+          <div class="ref-step"><b>4｜我會怎麼用？</b><span>決定它是命名、對照、延伸，還是放進某一章。</span></div>
+        </div>
       </div>
-    </div>
-    <div class="ref-toolbar">
-      <div class="ref-toolbar-note">不知道怎麼寫時，先完成「核心觀點」和「它讓我想到哪段經驗」兩格就夠了。</div>
-      <div class="actions" style="margin:0"><button class="btn" id="refDemoBtn" type="button">看一個示範</button><button class="btn primary" id="addRef" type="button">＋ 新增借鏡卡</button></div>
-    </div>
-    <div class="ref-demo" id="refDemo">
-      <div class="ref-demo-grid">
-        <div class="ref-demo-item"><small>來源</small><div>《Atomic Habits》／James Clear</div></div>
-        <div class="ref-demo-item"><small>核心觀點</small><div>穩定行為不只靠意志力，環境與制度也會影響習慣是否容易持續。</div></div>
-        <div class="ref-demo-item"><small>它讓我想到</small><div>以前把紀律理解成「逼自己做到」，後來才發現外部制度也會塑造長期行為。</div></div>
-        <div class="ref-demo-item"><small>我可能怎麼用</small><div>放進談紀律的章節，作為「個人意志 → 系統設計」觀念轉變的借鏡。</div></div>
+      <div class="ref-toolbar">
+        <div class="ref-toolbar-note">不知道怎麼寫時，先完成「核心觀點」和「它讓我想到哪段經驗」兩格就夠了。</div>
+        <div class="actions" style="margin:0"><button class="btn" id="refDemoBtn" type="button">看一個示範</button><button class="btn primary" id="addRef" type="button">＋ 新增借鏡卡</button></div>
       </div>
-    </div>
-    <div id="refList" class="reference-cards"></div>`;
-  document.getElementById('refDemoBtn')?.addEventListener('click',()=>document.getElementById('refDemo')?.classList.toggle('show'));
-  document.getElementById('addRef')?.addEventListener('click',addReference);
+      <div class="ref-demo" id="refDemo">
+        <div class="ref-demo-grid">
+          <div class="ref-demo-item"><small>來源</small><div>《Atomic Habits》／James Clear</div></div>
+          <div class="ref-demo-item"><small>核心觀點</small><div>穩定行為不只靠意志力，環境與制度也會影響習慣是否容易持續。</div></div>
+          <div class="ref-demo-item"><small>它讓我想到</small><div>以前把紀律理解成「逼自己做到」，後來才發現外部制度也會塑造長期行為。</div></div>
+          <div class="ref-demo-item"><small>我可能怎麼用</small><div>放進談紀律的章節，作為「個人意志 → 系統設計」觀念轉變的借鏡。</div></div>
+        </div>
+      </div>
+      <div id="refList" class="reference-cards"></div>`;
+  }
+
+  bindShellEvents(section);
   return true;
 }
 
@@ -144,8 +170,15 @@ function render(){
 }
 
 function bind(){
-  document.querySelectorAll('[data-open-ref]').forEach(btn=>btn.addEventListener('click',()=>{expandedId=expandedId===btn.dataset.openRef?null:btn.dataset.openRef;render()}));
-  document.querySelectorAll('[data-ref-field]').forEach(control=>{
+  const section=document.getElementById('v-references');
+  if(!section)return;
+
+  section.querySelectorAll('[data-open-ref]').forEach(btn=>btn.addEventListener('click',()=>{
+    expandedId=expandedId===btn.dataset.openRef?null:btn.dataset.openRef;
+    render();
+  }));
+
+  section.querySelectorAll('[data-ref-field]').forEach(control=>{
     const commit=()=>{
       const card=control.closest('[data-ref-id]');if(!card)return;
       const all=refs();const item=all.find(x=>x.id===card.dataset.refId);if(!item)return;
@@ -154,22 +187,43 @@ function bind(){
       saveRefs(all);
       if(save)setTimeout(()=>{if(document.body.contains(save))save.textContent='✓ 已儲存'},250);
     };
-    control.addEventListener('input',commit);control.addEventListener('change',commit);
+    control.addEventListener('input',commit);
+    control.addEventListener('change',commit);
   });
-  document.querySelectorAll('[data-delete-ref]').forEach(btn=>btn.addEventListener('click',()=>{
+
+  section.querySelectorAll('[data-delete-ref]').forEach(btn=>btn.addEventListener('click',()=>{
     const card=btn.closest('[data-ref-id]');if(!card||!confirm('刪除這張引用與借鏡卡？'))return;
-    saveRefs(refs().filter(x=>x.id!==card.dataset.refId));expandedId=null;render();
+    saveRefs(refs().filter(x=>x.id!==card.dataset.refId));
+    expandedId=null;
+    render();
   }));
 }
 
 function addReference(){
   const all=refs();
-  const item=normalize({id:(crypto.randomUUID&&crypto.randomUUID())||Date.now().toString(36),sourceType:'書籍',status:'待確認來源'});
-  all.unshift(item);saveRefs(all);expandedId=item.id;render();
-  requestAnimationFrame(()=>document.querySelector(`[data-ref-id="${CSS.escape(item.id)}"] input[data-ref-field="name"]`)?.focus());
+  const item=normalize({id:newId(),sourceType:'書籍',status:'待確認來源'});
+  all.unshift(item);
+  saveRefs(all);
+  expandedId=item.id;
+  render();
+
+  requestAnimationFrame(()=>{
+    const safeId=globalThis.CSS?.escape?CSS.escape(String(item.id)):String(item.id).replace(/"/g,'\\"');
+    document.querySelector(`[data-ref-id="${safeId}"] input[data-ref-field="name"]`)?.focus();
+  });
 }
 
-function init(){addStyles();shell();render()}
+function init(){
+  addStyles();
+  shell();
+  render();
+}
+
 window.LifeArchiveReferencesEditor={render,add:addReference};
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
-  })();
+
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded',init,{once:true});
+}else{
+  init();
+}
+})();
