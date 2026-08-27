@@ -1,3 +1,4 @@
+(()=>{
 const REF_STATUS=['待確認來源','已確認來源'];
 const REF_TYPES=['書籍','文章／報導','研究／論文','人物／訪談','影片／Podcast','理論／概念','其他'];
 
@@ -171,3 +172,4 @@ function addReference(){
 function init(){addStyles();shell();render()}
 window.LifeArchiveReferencesEditor={render,add:addReference};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+  })();
